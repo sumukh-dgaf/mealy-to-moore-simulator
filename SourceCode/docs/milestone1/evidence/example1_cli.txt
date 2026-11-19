@@ -1,0 +1,40 @@
+== Input (mealy) ==
+type: mealy
+start: q0
+outputs: 0 1
+state | 0    | 1
+q0    | q0/0 | q1/0
+q1    | q0/0 | q1/1
+
+== Step log ==
+  1. [A1] O(q0) = {0}  from q0--0/0, q1--0/0
+  2. [A1] O(q1) = {0, 1}  from q0--1/0, q1--1/1
+  3. [A2] Create [q0,0] with λ'([q0,0]) = 0
+  4. [A2] Create [q1,0] with λ'([q1,0]) = 0
+  5. [A2] Create [q1,1] with λ'([q1,1]) = 1
+  6. [A4] δ'([q0,0], 0) = [q0,0]   because δ(q0, 0) = q0 and λ(q0, 0) = 0
+  7. [A4] δ'([q0,0], 1) = [q1,0]   because δ(q0, 1) = q1 and λ(q0, 1) = 0
+  8. [A4] δ'([q1,0], 0) = [q0,0]   because δ(q1, 0) = q0 and λ(q1, 0) = 0
+  9. [A4] δ'([q1,0], 1) = [q1,1]   because δ(q1, 1) = q1 and λ(q1, 1) = 1
+ 10. [A4] δ'([q1,1], 0) = [q0,0]   because δ(q1, 0) = q0 and λ(q1, 0) = 0
+ 11. [A4] δ'([q1,1], 1) = [q1,1]   because δ(q1, 1) = q1 and λ(q1, 1) = 1
+ 12. [A5] Start = [q0,0] (candidates [q0,0]). Any candidate is correct: all copies of q0 have the same outgoing transitions, and the start state's output is emitted only for the empty prefix, which the equivalence convention drops.
+ 13. [A6] Every Moore state is reachable from the start; nothing removed
+ 14. [BOUND] |Q'| = 3 (created 3, removed 0) ≤ |Q|·|Δ| = 2·2 = 4
+
+== Output (moore) ==
+type: moore
+start: [q0,0]
+outputs: 0 1
+state  | out | 0      | 1
+[q0,0] | 0   | [q0,0] | [q1,0]
+[q1,0] | 0   | [q0,0] | [q1,1]
+[q1,1] | 1   | [q0,0] | [q1,1]
+
+w = 0111
+  Mealy states : q0 q0 q1 q1 q1   output 0011
+  Moore states : [q0,0] [q0,0] [q1,0] [q1,1] [q1,1]   output 00011
+  Moore, first symbol dropped: 0011  ✔ match
+
+== Equivalence (Algorithm C) ==
+✔ equivalent — 3 reachable pairs: (q0, [q0,0]) (q1, [q1,0]) (q1, [q1,1])

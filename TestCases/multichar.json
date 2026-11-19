@@ -1,0 +1,43 @@
+{
+  "name": "TC-09: multi-character input and output symbols",
+  "type": "mealy",
+  "states": [
+    "s",
+    "t"
+  ],
+  "inputs": [
+    "a1",
+    "b2"
+  ],
+  "outputs": [
+    "y0",
+    "y1"
+  ],
+  "start": "s",
+  "transitions": [
+    {
+      "from": "s",
+      "input": "a1",
+      "to": "s",
+      "output": "y0"
+    },
+    {
+      "from": "s",
+      "input": "b2",
+      "to": "t",
+      "output": "y1"
+    },
+    {
+      "from": "t",
+      "input": "a1",
+      "to": "s",
+      "output": "y1"
+    },
+    {
+      "from": "t",
+      "input": "b2",
+      "to": "t",
+      "output": "y0"
+    }
+  ]
+}

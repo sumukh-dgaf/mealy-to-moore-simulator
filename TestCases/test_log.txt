@@ -1,0 +1,104 @@
+$ node --test
+✔ TC-01 Example 1: conversion and trace on 0111 match the hand-worked solution (3.019ms)
+ℹ TC-01 observed: O(q0)={0} O(q1)={0,1} | [q0,0]/0 [q1,0]/0 [q1,1]/1 | δ′ [q0,0]:[q0,0],[q1,0] [q1,0]:[q0,0],[q1,1] [q1,1]:[q0,0],[q1,1] | start [q0,0] | 0111: Mealy 0011, Moore 00011 → 0011 ✓ | equivalent (3 pairs)
+✔ TC-02 three classic Mealy machines: conversions match hand-worked results (2.1903ms)
+ℹ TC-02a observed: O(q)={0,1} | [q,0]/0 [q,1]/1 | start [q,0] | 0110: Mealy 1001, Moore 01001 → 1001 ✓ | equivalent (2 pairs)
+ℹ TC-02b observed: O(E)={0} O(O)={1} | [E,0]/0 [O,1]/1 | start [E,0] | 1101: Mealy 1001, Moore 01001 → 1001 ✓ | equivalent (2 pairs)
+ℹ TC-02c observed: O(a)={0} O(b)={0,1} O(c)={0} | [a,0]/0 [b,0]/0 [b,1]/1 [c,0]/0 | start [a,0] | 10101: Mealy 00101, Moore 000101 → 00101 ✓ | equivalent (4 pairs)
+✔ TC-03 Example 2: a state entered with every output symbol gets |Δ| copies (0.444ms)
+ℹ TC-03a observed: O(p)={x,y,z} → [p,x] [p,y] [p,z]
+ℹ TC-03b observed: created 7, removed [r,z],[d,z], |Q′| = 5 ≤ 12 | abba: Mealy xxxy, Moore xxxxy → xxxy ✓ | aab: Mealy xzx, Moore xxzx → xzx ✓ | equivalent (5 pairs)
+✔ TC-04 start state with no incoming transitions gets one copy [q,−] with the default output (0.6948ms)
+ℹ TC-04a observed: start [s,-] with λ′ = x, flagged in step A3
+ℹ TC-04b observed: abba: Mealy xxxy, Moore zxxxy → xxxy ✓ | equivalent (5 pairs)
+✔ TC-05 start state entered with several outputs: every start copy is equivalent (0.6249ms)
+ℹ TC-05a observed: start [q0,0]: equivalent (4 pairs) | start [q0,1]: equivalent (4 pairs)
+ℹ TC-05b observed: Start output "1" is not in O(q0) = {0}
+✔ TC-06 unreachable states are removed, and keeping them changes nothing (0.3907ms)
+ℹ TC-06a observed: removed [r,z], [d,z]; 5 states kept
+ℹ TC-06b observed: 7 states; equivalent (5 pairs)
+✔ TC-07 single state, single input symbol, single output symbol (0.3887ms)
+ℹ TC-07 observed: [q,x]/x | |Q′| = 1, |Q|·|Δ| = 1 | aaa: Mealy xxx, Moore xxxx → xxx ✓ | equivalent (1 pair)
+✔ TC-08 empty input string ε: Mealy outputs ε, Moore outputs only λ′(q0′) (0.3113ms)
+ℹ TC-08a observed: ε: Mealy ε, Moore 0 → ε ✓
+ℹ TC-08b observed: ε: Mealy ε, Moore x → ε ✓
+✔ TC-09 multi-character input and output symbols (0.6044ms)
+ℹ TC-09 observed: [s,y0]/y0 [s,y1]/y1 [t,y0]/y0 [t,y1]/y1 | a1 b2 b2 a1: Mealy y0 y1 y0 y1, Moore y0 y0 y1 y0 y1 → y0 y1 y0 y1 ✓
+✔ TC-10 the bound |Q′| ≤ |Q|·|Δ| is reached exactly (0.6184ms)
+ℹ TC-10 observed: |Q′| = 4 = |Q|·|Δ| = 4 | 0110: Mealy 0101, Moore 00101 → 0101 ✓ | equivalent (4 pairs)
+✔ TC-11 a wrong hand-converted Moore machine gets the shortest counterexample (0.5304ms)
+ℹ TC-11 observed: not equivalent, counterexample 11 | Mealy 01 vs Moore-dropped 00
+✔ TC-12 converted machines agree with their input on 500 random strings each (12.4283ms)
+ℹ TC-12 observed: 3500/3500 strings: Moore output minus its first symbol = Mealy output
+✔ TC-22 on 200 random machines the bound holds and Algorithm C proves equivalence (14.2921ms)
+ℹ TC-22 observed: 200/200 machines: |Q′| ≤ |Q|·|Δ| and equivalent
+✔ TC-23 the step log is structured, numbered, and in rule order (0.3719ms)
+ℹ TC-23 observed: 14 steps numbered 1…n; rules A1,A2,A4,A5,A6,BOUND | 28 steps numbered 1…n; rules A1,A3,A2,A4,A5,A6,BOUND
+✔ TC-13 missing transition is rejected (no trap state is added) (0.7669ms)
+ℹ TC-13a observed: Missing transition: δ(q1, 1) is not defined (machine must be complete)
+ℹ TC-13b observed: Missing transition: δ(q0, 1) is not defined (machine must be complete)
+✔ TC-14 unknown input and output symbols are rejected (0.1683ms)
+ℹ TC-14a observed: Transition #1 (q0, 2): unknown input symbol "2" (Σ = {0, 1}) | Missing transition: δ(q0, 0) is not defined (machine must be complete)
+ℹ TC-14b observed: Transition #1 (q0, 0): unknown output symbol "7" (Δ = {0, 1}) | Missing transition: δ(q0, 0) is not defined (machine must be complete)
+✔ TC-15 duplicate transition (non-determinism) is rejected (0.0847ms)
+ℹ TC-15 observed: Duplicate transition: δ(q0, 0) is defined more than once (machine must be deterministic)
+✔ TC-16 undefined or unknown start state is rejected (0.1345ms)
+ℹ TC-16a observed: Start state is undefined: set "start"
+ℹ TC-16b observed: Start state "q9" is not in Q = {q0, q1}
+✔ TC-17 empty Q, Σ or Δ is rejected (0.383ms)
+ℹ TC-17a observed: first error: State set Q is empty: declare at least one element in "states"; refused
+ℹ TC-17b observed: first error: Input alphabet Σ is empty: declare at least one element in "inputs"; refused
+ℹ TC-17c observed: first error: Output alphabet Δ is empty: declare at least one element in "outputs"; refused
+✔ TC-18 hand-converted Moore machine with a state lacking an output is rejected (0.3817ms)
+ℹ TC-18 observed: Missing state output: λ'([q1,1]) is not defined
+✔ TC-19 malformed table text and JSON are rejected with a clear message (0.2495ms)
+ℹ TC-19a observed: Line 3: cell "q0" must be written as next/output
+ℹ TC-19b observed: No transition table found (the header row "state | ..." is missing)
+ℹ TC-19c observed: refused with one JSON syntax error (Expected double-quoted property name in JSON at position 19 (line 1 column 20))
+✔ TC-20 a Moore machine as the main input is rejected (0.4179ms)
+ℹ TC-20 observed: Input must be a Mealy machine (this simulator converts Mealy → Moore only)
+✔ TC-24 unknown symbol in a test string, and different alphabets in the checker, are rejected (0.4104ms)
+ℹ TC-24a observed: Symbol "2" is not in Σ = {0, 1}
+ℹ TC-24b observed: Input alphabets differ ({0, 1} vs {a, b}); equivalence is undefined
+✔ TC-25 table text and JSON import/export round-trip without change (0.8867ms)
+ℹ TC-25a observed: identical
+ℹ TC-25b observed: JSON identical | table text identical
+✔ TC-26 console front-end reproduces Example 1 (130.7789ms)
+ℹ TC-26 observed: Moore, first symbol dropped: 0011  ✔ match | ✔ equivalent — 3 reachable pairs: (q0, [q0,0]) (q1, [q1,0]) (q1, [q1,1])
+ℹ TC-26b observed: exit 1: w = 012: Symbol "2" is not in Σ = {0, 1}
+✔ TC-21 a 50-state, 5-symbol machine converts and verifies in under 100 ms (12.8918ms)
+ℹ TC-21 observed: under 100 ms and equivalent (median 2.40 ms; |Q′| = 122; 122 pairs)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 313.7988
+(exit code 0)
+
+======================================================================
+$ node tests/ui-check.js http://localhost:8000/ <screenshots>   (Playwright 1.63.0, Chromium 153; server: python -m http.server 8000 in SourceCode)
+✔ UI-01 Editor + Example 1 loads (HTTP server): Example 1 converted: 2 → 3 states, ✓ equivalent; no console errors
+✔ UI-02 Step player (Next / Prev / timeline): Step 2 of 16 → Step 1 of 16 → Create [q0,0] → Create [q1,0]
+✔ UI-03 SVG diagram + transition tables (result): Result: the Moore machine; 3 states drawn; Mealy and Moore tables shown
+✔ UI-04 String tester (both machines, aligned outputs): 0111 | 0011 | 00011 | 0011 | ✓
+✔ UI-04b String tester (20 random strings): 20 of 20 random strings match (see the log).
+✔ UI-05 Exact equivalence check (Algorithm C): Validate: ✓ 3 pairs | checker: ✓ Equivalent: no mismatch in 3 reachable state pairs.
+✔ UI-06 Check a hand-converted Moore machine: ✗ Not equivalent. Shortest counterexample: 11
+✔ UI-07 Unreachable-state removal (step player): Remove unreachable Moore states | removed: [r,z] [d,z]
+✔ UI-08 Input validation (editor): Please fix the input:Missing transition: δ(q1, 1) is not defined (machine must be complete)
+✔ UI-09 Input validation (import): Please fix the input:Input must be a Mealy machine (this simulator converts Mealy → Moore only)
+✔ UI-10 Import transition table text: states q0, q1 | 2 → 3
+✔ UI-11 Export diagram (SVG / PNG): mealy-moore-step-15.svg: standalone SVG with 3 states | mealy-moore-step-15.png: PNG file
+✔ UI-12 Export Moore machine (JSON / table text): moore-machine.json → [q0,0] [q1,0] [q1,1] | moore-machine.txt → same machine
+✔ UI-13 Share link: Loaded from a shared link. | 4 → 5
+✔ UI-14 Layout without sideways overflow: 1200→1200 1280→1280 1366→1366
+✔ UI-15 Diagram layout for larger machines: minimum width set; stage scrolls
+✔ UI-16 Project design tab (M1 design document): 7 cards; first section 1. Problem Definition & Automata Specification
+✔ UI-17 Runs offline from file:// (double-click): 2 → 3; no page errors
+✔ UI-18 No JavaScript errors during the whole UI run: no console or page errors
+
+UI checks: 19 passed, 0 failed (of 19)
+(exit code 0)

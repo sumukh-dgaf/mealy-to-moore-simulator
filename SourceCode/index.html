@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Mealy → Moore Conversion Simulator</title>
+  <link rel="stylesheet" href="src/ui/style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <!-- logo: a start arrow into a state, with an a/o transition label -->
+      <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M2 30 H13" stroke="#e6ebf5" stroke-width="2.4"/>
+        <path d="M10 26 L15 30 L10 34 z" fill="#e6ebf5"/>
+        <circle cx="30" cy="30" r="14" fill="#1f2a4a" stroke="#8ea6ff" stroke-width="2.4"/>
+        <text x="30" y="35" text-anchor="middle" font-family="Cambria, Georgia, serif" font-style="italic" font-size="14" fill="#e6ebf5">q</text>
+        <text x="30" y="11" text-anchor="middle" font-family="Consolas, monospace" font-size="10" font-weight="700" fill="#f59e0b">a/o</text>
+      </svg>
+      <div>
+        <h1>Mealy → Moore Conversion Simulator</h1>
+        <p>CSET302 Automata Theory and Computability, simulator topic 14</p>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <button class="tab active" data-tab="sim">Simulator</button>
+      <button class="tab" data-tab="design">Project design (Milestone 1)</button>
+    </nav>
+    <button id="focusBtn" class="btn ghost" type="button" aria-pressed="false" title="Hide the editor to give the diagram the full width (F)">Hide editor</button>
+  </div>
+</header>
+
+<main>
+<!-- ======================= SIMULATOR ======================= -->
+<section id="sim" class="tab-panel">
+  <div class="layout">
+
+    <aside id="editor" class="card">
+      <h2>Define the Mealy machine</h2>
+      <div class="field">
+        <label for="preset">Load an example</label>
+        <div class="row">
+          <select id="preset"></select>
+          <button id="newBtn" class="btn" type="button">New</button>
+        </div>
+        <p id="presetNote" class="hint"></p>
+      </div>
+      <div class="field">
+        <label for="states">States Q</label>
+        <input id="states" type="text" placeholder="q0, q1">
+        <p class="hint">Comma-separated. The table updates when you leave the box.</p>
+      </div>
+      <div class="field">
+        <label for="inputs">Input alphabet Σ</label>
+        <input id="inputs" type="text" placeholder="0, 1">
+      </div>
+      <div class="field">
+        <label for="outputs">Output alphabet Δ</label>
+        <input id="outputs" type="text" placeholder="0, 1">
+      </div>
+      <div class="field">
+        <label for="startSel">Start state q₀</label>
+        <select id="startSel"></select>
+      </div>
+      <div class="field">
+        <span class="label">Transitions: next state δ / output λ</span>
+        <div class="tbl-wrap"><table id="deltaTable"></table></div>
+        <p class="hint">Fill both parts of every cell. “—” = undefined: the machine must be complete, so it will be reported.</p>
+      </div>
+      <details class="import">
+        <summary>Import a transition table or JSON</summary>
+        <textarea id="importText" rows="7" spellcheck="false" placeholder="type: mealy&#10;start: q0&#10;outputs: 0 1&#10;state | 0    | 1&#10;q0    | q0/0 | q1/0&#10;q1    | q0/0 | q1/1"></textarea>
+        <button id="importBtn" class="btn" type="button">Load into editor</button>
+      </details>
+      <fieldset>
+        <legend>Options</legend>
+        <label>Default output for states with no incoming transitions <select id="defaultSel"></select></label>
+        <label>Start copy [q₀, o] uses o = <select id="startOutSel"></select></label>
+        <label><input id="pruneChk" type="checkbox" checked> Remove unreachable Moore states</label>
+      </fieldset>
+      <button id="runBtn" class="btn primary big" type="button">Convert to Moore</button>
+      <div id="inputMsg" class="msg" role="alert"></div>
+    </aside>
+
+    <div class="main-col">
+      <section id="emptyState" class="card empty-state">
+        <h2>No machine converted yet</h2>
+        <p>Load an example or fill in your own Mealy machine, then press Convert to Moore.</p>
+      </section>
+      <section id="player" class="card" hidden>
+        <div id="summary" class="summary"></div>
+        <div class="export-row">
+          <span>Export:</span>
+          <button id="svgBtn" class="btn small" type="button" title="Download the diagram shown below as SVG">Diagram SVG</button>
+          <button id="pngBtn" class="btn small" type="button" title="Download the diagram shown below as PNG">Diagram PNG</button>
+          <button id="jsonBtn" class="btn small" type="button" title="Download the generated Moore machine as JSON">Moore JSON</button>
+          <button id="textBtn" class="btn small" type="button" title="Download the generated Moore machine as transition-table text">Moore table text</button>
+          <button id="linkBtn" class="btn small" type="button" title="Put a link that reopens this Mealy machine in the address bar">Share link</button>
+          <span id="exportMsg" role="status"></span>
+        </div>
+        <ol id="timeline" class="timeline" aria-label="Phases"></ol>
+        <div class="player-head">
+          <span id="stepCount"></span>
+          <div class="controls">
+            <button id="firstBtn" class="btn" type="button" title="First step" aria-label="First step">⏮</button>
+            <button id="prevBtn" class="btn" type="button" title="Previous (←)">◀ Prev</button>
+            <button id="playBtn" class="btn" type="button">▶ Play</button>
+            <button id="nextBtn" class="btn" type="button" title="Next (→)">Next ▶</button>
+            <button id="lastBtn" class="btn" type="button" title="Last step" aria-label="Last step">⏭</button>
+            <select id="speed" title="Play speed" aria-label="Play speed">
+              <option value="2200">Slow</option>
+              <option value="1400" selected>Normal</option>
+              <option value="700">Fast</option>
+            </select>
+          </div>
+        </div>
+        <div class="progress"><div id="progress"></div></div>
+        <!-- aria-live: screen readers announce each new step while stepping or playing -->
+        <div aria-live="polite">
+          <h2 id="stepTitle"></h2>
+          <div id="stepText"></div>
+        </div>
+        <div class="visuals">
+          <div class="panel">
+            <div id="graphLabel" class="panel-label"></div>
+            <div id="graphMain" class="graph stage"></div>
+          </div>
+          <div class="panel">
+            <div id="workLabel" class="panel-label"></div>
+            <div id="work"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="bottom-row">
+        <div class="stack">
+          <section id="tester" class="card" hidden>
+            <h2>Test strings on both machines</h2>
+            <div class="test-row">
+              <input id="testInput" type="text" placeholder="e.g. 0111 (leave empty for ε)" aria-label="String to test">
+              <button id="testBtn" class="btn primary" type="button">Run on both</button>
+              <button id="randomBtn" class="btn" type="button">20 random</button>
+            </div>
+            <div id="samples" class="samples"></div>
+            <div id="testOut"></div>
+            <table id="testLog" class="log" hidden>
+              <caption>Tested so far</caption>
+              <thead><tr><th>String</th><th>Mealy output</th><th>Moore output</th><th>Moore, first dropped</th><th>Match</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+          <section id="checker" class="card" hidden>
+            <h2>Check a hand-converted Moore machine</h2>
+            <p class="hint">Exact equivalence check (Algorithm C). Leave the box empty to check the generated machine, or paste your own hand-converted Moore machine to check it.</p>
+            <textarea id="candidate" rows="6" spellcheck="false" placeholder="paste your own hand-converted Moore machine to check it"></textarea>
+            <div class="row">
+              <button id="checkBtn" class="btn primary" type="button">Verify equivalence</button>
+              <button id="copyMooreBtn" class="btn" type="button">Copy generated Moore machine into the box</button>
+            </div>
+            <div id="checkOut"></div>
+          </section>
+        </div>
+        <section class="card">
+          <h2>All steps</h2>
+          <ol id="stepList"></ol>
+          <p class="kbd"><kbd>←</kbd> <kbd>→</kbd> step, <kbd>Space</kbd> play or pause, <kbd>F</kbd> hide editor</p>
+        </section>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= MILESTONE 1 DESIGN DOCUMENT ======================= -->
+<section id="design" class="tab-panel doc" hidden>
+
+  <div class="card title-block">
+    <h2>Mealy → Moore Machine Conversion Simulator: Design Review (Milestone 1)</h2>
+    <p>CSET302 Automata Theory and Computability · Simulator Topic 14 · 2026</p>
+    <table class="grid" style="margin:10px auto">
+      <thead><tr><th>#</th><th>Member</th><th>Enrollment No.</th><th>Module owned</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Sumukh Gupta</td><td>S24CSEU0570</td><td>Algorithm A (state splitting), controller</td></tr>
+        <tr><td>2</td><td>Neya Tripathi</td><td>S24CSEU0609</td><td>Input parsing &amp; validation, tests</td></tr>
+        <tr><td>3</td><td>Aaditya Goel</td><td>S24CSEU0614</td><td>Simulation + Algorithm C (equivalence)</td></tr>
+        <tr><td>4</td><td>Kushika Mishra</td><td>S24CSEU0652</td><td>Visualization &amp; UI</td></tr>
+        <tr><td>5</td><td>Kartik Mahajan</td><td>S24CSEU0640</td><td>Tool analysis, documentation, CLI</td></tr>
+      </tbody>
+    </table>
+    <p class="legend">Full document with UML, module table and work plan: <code>docs/milestone1/M1_Design_Document.md</code>.</p>
+  </div>
+
+  <!-- 1. Problem definition -->
+  <div class="card">
+    <span class="marks">Criterion 1 · 1 mark</span>
+    <h2>1. Problem Definition &amp; Automata Specification</h2>
+    <h3>Problem</h3>
+    <p>Mealy and Moore machines are the two standard finite-state transducers. Textbooks prove they are equivalent, but students usually see the conversion only as a finished table: not <i>why</i> a Mealy state must be split, <i>which</i> copy becomes the start state, or <i>how</i> to check that the result really behaves the same. A hand conversion can also be wrong in ways a few test strings miss.</p>
+    <h3>Objectives</h3>
+    <ol>
+      <li>Accept any user-defined deterministic, complete Mealy machine and validate it with a clear message for every error.</li>
+      <li>Convert it to an equivalent Moore machine by <b>state splitting</b>, reproducing hand-worked examples exactly.</li>
+      <li>Show every step (incoming outputs, created states, transitions, start choice, pruning) with the rule applied.</li>
+      <li>Draw the Mealy and Moore machines and their transition tables.</li>
+      <li><b>Prove</b> equivalence with an exact algorithm that returns a shortest counterexample, and test user and random strings.</li>
+    </ol>
+    <h3>Formal specification</h3>
+    <p><b>Input:</b> a Mealy machine <i>M</i> = (Q, Σ, Δ, δ, λ, q₀): Q finite states, Σ input alphabet, Δ output alphabet, δ : Q × Σ → Q, λ : Q × Σ → Δ (output on <b>transitions</b>), q₀ ∈ Q. On input of length n it outputs n symbols.</p>
+    <p><b>Output:</b> a Moore machine <i>M′</i> = (Q′, Σ, Δ, δ′, λ′, q₀′) with λ′ : Q′ → Δ (output on <b>states</b>). On input of length n it outputs n + 1 symbols; the first, λ′(q₀′), is printed before any input is read.</p>
+    <p><b>Equivalence convention:</b> M and M′ are equivalent iff for every w ∈ Σ*, the Moore output of w with its first symbol dropped equals the Mealy output of w, i.e. λ′(δ′*(q₀′, u·a)) = λ(δ*(q₀, u), a) for all u ∈ Σ*, a ∈ Σ.</p>
+    <p><b>Why split states:</b> a Moore state has one output, but a Mealy state can be entered by transitions with different outputs (q1 in Example 1 is entered with 0 and with 1). Each copy [q, o] remembers “in q, last output o”.</p>
+    <table class="grid">
+      <thead><tr><th>Inputs</th><th>Outputs</th></tr></thead>
+      <tbody><tr>
+        <td>Q, Σ, Δ, start state, transition table (next state / output), or a pasted transition table / JSON; default output, start copy, prune option; test strings; optional hand-converted Moore machine</td>
+        <td>Validation errors; O(q) for each state; created Moore states; δ′ table; start choice; removed states; Moore machine (diagram + table); |Q′| vs bound |Q|·|Δ|; equivalence verdict or counterexample; outputs of both machines per test string</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <!-- 2. Existing tools -->
+  <div class="card">
+    <span class="marks">Criterion 2 · 1 mark</span>
+    <h2>2. Existing Tools &amp; Feasibility</h2>
+    <table class="grid">
+      <thead><tr><th>Tool</th><th>Platform</th><th>What it offers</th><th>Limitations for learning Mealy → Moore</th></tr></thead>
+      <tbody>
+        <tr><td>JFLAP 7.1</td><td>Desktop (Java)</td><td>Build, step, fast-run and multiple-run Mealy and Moore machines</td><td>No conversion between the two models (its tutorial index lists conversions only for FA, PDA, TM and grammars); needs a Java install</td></tr>
+        <tr><td>automatonsimulator.com</td><td>Web</td><td>DFA, NFA and PDA; step-debug a string</td><td>Acceptors only, no transducers (the live site running the kdickerson repository is [to verify])</td></tr>
+        <tr><td>Noam FSM Simulator (I. Zuzak)</td><td>Web</td><td>DFA, NFA and eNFA, one symbol at a time</td><td>Acceptors only; its FSM2Regex tool converts between FSMs and regexes, not Mealy → Moore</td></tr>
+        <tr><td>Moore-Mealy-Converter (GitHub)</td><td>Desktop (Python, Tkinter)</td><td>Converts in both directions</td><td>Install required; intermediate steps [to verify]; no equivalence check mentioned</td></tr>
+        <tr><td>Tutorial sites (GeeksforGeeks, Educative, TpointTech)</td><td>Web</td><td>Worked examples by hand</td><td>Not interactive: you cannot enter your own machine</td></tr>
+        <tr><td><b>Our simulator</b></td><td>Any browser, offline</td><td>Step-by-step state splitting with the rule for each step, exact equivalence check with shortest counterexample, check of your own hand conversion</td><td>Designed for small/medium machines (≈ 20 states) so diagrams stay readable</td></tr>
+      </tbody>
+    </table>
+    <h3>Feasibility</h3>
+    <ul>
+      <li><b>Technical:</b> plain HTML, CSS and JavaScript with no libraries, CDN or server. Opens by double-clicking <code>index.html</code>, so it works in the lab without installation. The algorithm files also run in Node for automated tests.</li>
+      <li><b>Computational:</b> conversion is O(|Q|·|Δ|·|Σ|); the equivalence check is O(|Q|·|Q′|·|Σ|). For classroom machines this runs instantly.</li>
+      <li><b>Time:</b> the core algorithms and a working prototype already exist (this page); M2 time goes to more tests, polish and the report.</li>
+    </ul>
+  </div>
+
+  <!-- 3. Design -->
+  <div class="card">
+    <span class="marks">Criterion 3 · 2 marks</span>
+    <h2>3. Simulator Design &amp; Methodology</h2>
+    <h3>Architecture (modules)</h3>
+    <div class="arch">
+      <div class="wide"><b>index.html</b>User interface: Mealy editor, step player, string tester, hand-conversion checker, design document</div>
+      <div><b>src/ui/app.js</b>Controller: reads input, calls the core, turns the step log into player steps</div>
+      <div><b>src/ui/render.js</b>View helpers: transition tables, output alignment, equivalence result</div>
+      <div><b>src/ui/graph.js</b>View: draws a Mealy or Moore machine as an SVG state diagram</div>
+      <div><b>src/core/parser.js</b>Parse + validate input (form, table text, JSON)</div>
+      <div><b>src/core/mealyToMoore.js</b>Algorithm A: state splitting with a structured step log</div>
+      <div><b>src/core/equivalence.js</b>Algorithm C: exact BFS equivalence check</div>
+      <div><b>src/core/simulate.js</b>Run both machines, compare outputs, random strings</div>
+      <div><b>src/core/model.js</b>Machine types and the step log</div>
+      <div><b>examples/presets.js</b>Example machines (normal and edge cases)</div>
+      <div><b>tests/core.test.js</b>Automated tests run with <code>node --test</code></div>
+      <div><b>src/cli.js</b>Console version for reproducible evidence</div>
+      <div><b>src/ui/style.css</b>Layout and visual style</div>
+    </div>
+    <p>The algorithms never touch the page: they return results plus a list of <i>step records</i> <code>{stepNo, rule, description, data}</code>. The UI only replays those records. This separation lets the same algorithm files be tested automatically.</p>
+
+    <h3>Flowchart (input → processing → output)</h3>
+    <div class="flow">
+      <div class="term">Start</div><span>↓</span>
+      <div>User enters a Mealy machine (form, pasted table/JSON, or example) and options</div><span>↓</span>
+      <div class="dec">Is it a Mealy machine?</div><span>↓ yes &nbsp; (no → “Input must be a Mealy machine”, stop)</span>
+      <div class="dec">Valid? (alphabets, start state, known states and symbols, no duplicates, every δ(q, a) defined)</div><span>↓ yes &nbsp; (no → list every error, stop)</span>
+      <div>A1: compute O(q), the outputs entering each state</div><span>↓</span>
+      <div>A2/A3: create one Moore state [q, o] per entering output; [q, −] with a default output if none</div><span>↓</span>
+      <div>A4: δ′([q, o], a) = [δ(q, a), λ(q, a)]</div><span>↓</span>
+      <div>A5: choose the start copy · A6: remove unreachable states (BFS)</div><span>↓</span>
+      <div>Validate: Algorithm C over reachable state pairs + 200 random strings</div><span>↓</span>
+      <div>Show steps, diagrams, tables; user tests own strings or a hand conversion</div><span>↓</span>
+      <div class="term">End</div>
+    </div>
+
+    <h3>UI wireframe</h3>
+    <div class="wire">
+      <div class="tall">Input panel<br>examples · Q · Σ · Δ · start · δ / λ table · import text/JSON · options · Convert</div>
+      <div>Result strip (states, created, removed, bound, ✓) · phase timeline · ◀ Play ▶ · progress · explanation</div>
+      <div>State diagram (highlights) &nbsp;|&nbsp; Working area (O(q) table / created states / δ′ table / pairs)</div>
+      <div>String tester (both machines, aligned outputs) &nbsp;|&nbsp; List of all steps</div>
+      <div>Hand-converted Moore machine check (counterexample)</div>
+    </div>
+    <p>The <b>Simulator</b> tab is the working prototype of this wireframe.</p>
+  </div>
+
+  <!-- 4. Algorithms -->
+  <div class="card">
+    <span class="marks">Criterion 4 · 1 mark</span>
+    <h2>4. Algorithm Selection &amp; Pseudocode</h2>
+    <h3>Algorithm A: Mealy → Moore (state splitting)</h3>
+<pre>MEALY-TO-MOORE(M, def = Δ[0], startOut = none, prune = true):
+  for each q, a:  O(δ(q,a)) ← O(δ(q,a)) ∪ {λ(q,a)}                ▷ A1
+  for each q:
+      if O(q) = ∅:  create [q,−] with λ′ = def                      ▷ A3
+      else for each o ∈ O(q):  create [q,o] with λ′ = o             ▷ A2
+  for each [q,o], a:  δ′([q,o], a) ← [δ(q,a), λ(q,a)]               ▷ A4
+  q0′ ← [q0,−] if O(q0) = ∅ else [q0, startOut or first of O(q0)]   ▷ A5
+  if prune: keep only states reachable from q0′ (BFS)               ▷ A6
+  return M′                                     ▷ |Q′| ≤ |Q|·|Δ|</pre>
+    <p><b>Why it is correct:</b> the target in A4 always exists, because λ(q,a) was added to O(δ(q,a)) in A1. By induction, after reading u·a the Moore machine is in [δ*(q0, u·a), λ(δ*(q0, u), a)], whose output is exactly the Mealy output for a. The transitions of [q,o] never depend on o, so every start copy and every default output only changes the first (dropped) Moore symbol.</p>
+
+    <h3>Algorithm C: exact equivalence check (formal validation)</h3>
+<pre>EQUIVALENT(M, M′):
+  queue ← [(q0, q0′)];  parent[(q0, q0′)] ← nil
+  while queue not empty:
+      (q, r) ← dequeue(queue)
+      for each a in Σ:
+          if λ(q,a) ≠ λ′(δ′(r,a)):  return NOT EQUIVALENT, path(q, r)·a
+          if (δ(q,a), δ′(r,a)) unseen:  record parent; enqueue it
+  return EQUIVALENT</pre>
+    <p><b>Why it is sound and complete:</b> every input prefix leads to exactly one reachable pair, there are at most |Q|·|Q′| pairs, and each check is exactly the convention for one prefix and one symbol. BFS order makes the counterexample a shortest one. This is stronger than random testing.</p>
+    <table class="grid">
+      <thead><tr><th>Algorithm</th><th>Time complexity</th></tr></thead>
+      <tbody>
+        <tr><td>Parse + validate</td><td>O(|Q|·|Σ| + |transitions|)</td></tr>
+        <tr><td>Algorithm A (Mealy → Moore)</td><td>O(|Q|·|Δ|·|Σ|)</td></tr>
+        <tr><td>Algorithm C (equivalence)</td><td>O(|Q|·|Q′|·|Σ|)</td></tr>
+        <tr><td>Run one string of length L</td><td>O(L)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 5. Manual example -->
+  <div class="card">
+    <span class="marks">Criterion 4 · manual validation</span>
+    <h2>5. Manually Solved Validation Example</h2>
+    <p>Mealy “11” sequence detector over Σ = Δ = {0, 1}, start q0: outputs 1 when the last two inputs are 11. (Load “Example 1” in the Simulator to compare.)</p>
+    <table class="grid c">
+      <thead><tr><th>δ / λ</th><th>0</th><th>1</th></tr></thead>
+      <tbody>
+        <tr><th>→q0</th><td>q0 / 0</td><td>q1 / 0</td></tr>
+        <tr><th>q1</th><td>q0 / 0</td><td>q1 / 1</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Step A1: outputs entering each state</h3>
+    <table class="grid c">
+      <thead><tr><th>Transition</th><th>Target</th><th>Output added</th></tr></thead>
+      <tbody>
+        <tr><td>q0 —0/0→ q0</td><td>q0</td><td>0</td></tr>
+        <tr><td>q0 —1/0→ q1</td><td>q1</td><td>0</td></tr>
+        <tr><td>q1 —0/0→ q0</td><td>q0</td><td>0</td></tr>
+        <tr><td>q1 —1/1→ q1</td><td>q1</td><td>1</td></tr>
+      </tbody>
+    </table>
+    <p>O(q0) = {0}, O(q1) = {0, 1}. So q0 → [q0,0] (output 0); q1 splits into [q1,0] (output 0) and [q1,1] (output 1). No state lacks incoming transitions.</p>
+
+    <h3>Steps A4–A6: Moore machine</h3>
+    <table class="grid c">
+      <thead><tr><th>δ′</th><th>λ′</th><th>0</th><th>1</th></tr></thead>
+      <tbody>
+        <tr><th>→[q0,0]</th><td>0</td><td>[q0,0]</td><td>[q1,0]</td></tr>
+        <tr><th>[q1,0]</th><td>0</td><td>[q0,0]</td><td>[q1,1]</td></tr>
+        <tr><th>[q1,1]</th><td>1</td><td>[q0,0]</td><td>[q1,1]</td></tr>
+      </tbody>
+    </table>
+    <p>Start = [q0,0] since O(q0) = {0}. All three states are reachable, so nothing is removed. |Q′| = 3 ≤ |Q|·|Δ| = 4.</p>
+
+    <h3>Validation by hand: w = 0111</h3>
+    <table class="grid c">
+      <thead><tr><th>i</th><th>Read</th><th>Mealy</th><th>Mealy output</th><th>Moore state</th><th>Moore output</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>–</td><td>q0</td><td>–</td><td>[q0,0]</td><td>0 (dropped)</td></tr>
+        <tr><td>1</td><td>0</td><td>q0 → q0</td><td>0</td><td>[q0,0]</td><td>0</td></tr>
+        <tr><td>2</td><td>1</td><td>q0 → q1</td><td>0</td><td>[q1,0]</td><td>0</td></tr>
+        <tr><td>3</td><td>1</td><td>q1 → q1</td><td>1</td><td>[q1,1]</td><td>1</td></tr>
+        <tr><td>4</td><td>1</td><td>q1 → q1</td><td>1</td><td>[q1,1]</td><td>1</td></tr>
+      </tbody>
+    </table>
+    <p>Mealy output 0011; Moore output 00011 → drop the first symbol → 0011 ✓.</p>
+    <p><b>Equivalence by hand (Algorithm C):</b> from (q0, [q0,0]): on 0, 0 = λ′([q0,0]) = 0 ✓; on 1, 0 = λ′([q1,0]) = 0 ✓ → (q1, [q1,0]). From (q1, [q1,0]): on 0, 0 = 0 ✓; on 1, 1 = λ′([q1,1]) = 1 ✓ → (q1, [q1,1]). From (q1, [q1,1]): 0 = 0 ✓, 1 = 1 ✓. <b>3 pairs, no mismatch → equivalent.</b></p>
+    <p class="legend">The simulator reproduces exactly these sets, states, transitions and outputs (also asserted in <code>tests/core.test.js</code>). Example 2 covers the edge cases: a state entered with three different outputs, a start state with no incoming transitions, and unreachable copies.</p>
+  </div>
+
+  <!-- 6. Test plan -->
+  <div class="card">
+    <h2>6. Test Plan (normal and edge cases)</h2>
+    <table class="grid">
+      <thead><tr><th>#</th><th>Test case</th><th>What it checks</th><th>Expected result</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Example 1, w = 0111</td><td>Matches the hand solution</td><td>3 Moore states; 0011 vs 00011; equivalent</td></tr>
+        <tr><td>2</td><td>Example 2</td><td>3 incoming outputs, start with no incoming, unreachable copies</td><td>7 created, [r,z] and [d,z] removed, 5 states; equivalent</td></tr>
+        <tr><td>3</td><td>Different default output / start copy</td><td>Choice does not matter</td><td>Still equivalent; only the first Moore symbol changes</td></tr>
+        <tr><td>4</td><td>Pruning off</td><td>Unreachable states are harmless</td><td>7 states, still equivalent</td></tr>
+        <tr><td>5</td><td>Empty string ε</td><td>Edge case</td><td>Mealy ε, Moore λ′(q₀′), drop-first ε ✓</td></tr>
+        <tr><td>6</td><td>Wrong hand-converted Moore machine</td><td>Algorithm C finds the bug</td><td>✗ with shortest counterexample (11 for Example 1 with λ′([q1,1]) = 0)</td></tr>
+        <tr><td>7</td><td>Missing / duplicate transition, unknown symbol, undefined start, empty alphabet</td><td>Input validation</td><td>Clear error message, no crash</td></tr>
+        <tr><td>8</td><td>A Moore machine as the main input</td><td>Input validation</td><td>“Input must be a Mealy machine (this simulator converts Mealy → Moore only)”</td></tr>
+        <tr><td>9</td><td>300 random strings per example (automated)</td><td>Supplementary validation</td><td>All match (<code>node --test</code>)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</main>
+
+<footer>Works offline: open index.html in any modern browser.</footer>
+
+<script src="src/core/model.js"></script>
+<script src="src/core/parser.js"></script>
+<script src="src/core/mealyToMoore.js"></script>
+<script src="src/core/simulate.js"></script>
+<script src="src/core/equivalence.js"></script>
+<script src="examples/presets.js"></script>
+<script src="src/ui/graph.js"></script>
+<script src="src/ui/render.js"></script>
+<script src="src/ui/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+flowchart LR
+  startArrow[" "] --> s0
+  style startArrow fill:none,stroke:none
+  s0(("q0"))
+  s1(("q1"))
+  s0 -->|"0/0"| s0
+  s0 -->|"1/0"| s1
+  s1 -->|"0/0"| s0
+  s1 -->|"1/1"| s1

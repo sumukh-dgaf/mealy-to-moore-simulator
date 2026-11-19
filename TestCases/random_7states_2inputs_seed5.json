@@ -1,0 +1,109 @@
+{
+  "name": "UI-15: randomMealy(7, 2, 3, seed 5)",
+  "type": "mealy",
+  "states": [
+    "q0",
+    "q1",
+    "q2",
+    "q3",
+    "q4",
+    "q5",
+    "q6"
+  ],
+  "inputs": [
+    "a0",
+    "a1"
+  ],
+  "outputs": [
+    "o0",
+    "o1",
+    "o2"
+  ],
+  "start": "q0",
+  "transitions": [
+    {
+      "from": "q0",
+      "input": "a0",
+      "to": "q3",
+      "output": "o0"
+    },
+    {
+      "from": "q0",
+      "input": "a1",
+      "to": "q6",
+      "output": "o0"
+    },
+    {
+      "from": "q1",
+      "input": "a0",
+      "to": "q5",
+      "output": "o0"
+    },
+    {
+      "from": "q1",
+      "input": "a1",
+      "to": "q3",
+      "output": "o1"
+    },
+    {
+      "from": "q2",
+      "input": "a0",
+      "to": "q2",
+      "output": "o0"
+    },
+    {
+      "from": "q2",
+      "input": "a1",
+      "to": "q1",
+      "output": "o1"
+    },
+    {
+      "from": "q3",
+      "input": "a0",
+      "to": "q4",
+      "output": "o0"
+    },
+    {
+      "from": "q3",
+      "input": "a1",
+      "to": "q2",
+      "output": "o2"
+    },
+    {
+      "from": "q4",
+      "input": "a0",
+      "to": "q1",
+      "output": "o0"
+    },
+    {
+      "from": "q4",
+      "input": "a1",
+      "to": "q1",
+      "output": "o1"
+    },
+    {
+      "from": "q5",
+      "input": "a0",
+      "to": "q2",
+      "output": "o0"
+    },
+    {
+      "from": "q5",
+      "input": "a1",
+      "to": "q0",
+      "output": "o2"
+    },
+    {
+      "from": "q6",
+      "input": "a0",
+      "to": "q3",
+      "output": "o2"
+    },
+    {
+      "from": "q6",
+      "input": "a1",
+      "to": "q0",
+      "output": "o0"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "name": "Example 1: 11 detector",
+  "type": "mealy",
+  "states": [
+    "q0",
+    "q1"
+  ],
+  "inputs": [
+    "0",
+    "1"
+  ],
+  "outputs": [
+    "0",
+    "1"
+  ],
+  "start": "q0",
+  "transitions": [
+    {
+      "from": "q0",
+      "input": "0",
+      "to": "q0",
+      "output": "0"
+    },
+    {
+      "from": "q0",
+      "input": "1",
+      "to": "q1",
+      "output": "0"
+    },
+    {
+      "from": "q1",
+      "input": "0",
+      "to": "q0",
+      "output": "0"
+    },
+    {
+      "from": "q1",
+      "input": "1",
+      "to": "q1",
+      "output": "1"
+    }
+  ]
+}

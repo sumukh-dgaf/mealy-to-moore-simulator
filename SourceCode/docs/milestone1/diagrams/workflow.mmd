@@ -1,0 +1,16 @@
+flowchart TD
+  U["User input<br/>Mealy transition table / JSON<br/>(or Load example)"] --> P["Parse<br/>table text or JSON → spec"]
+  P -->|syntax error| E["Show errors<br/>(line numbers)"]
+  P --> D{"Is it a Mealy<br/>machine?"}
+  D -->|no: Moore input| E
+  D -->|yes| V{"Validate<br/>alphabets, start, unknown symbols,<br/>duplicates, completeness"}
+  V -->|errors| E
+  E --> U
+  V -->|valid| A["Algorithm A: Mealy → Moore<br/>A1 O(q) → A2/A3 split → A4 δ' → A5 start → A6 prune"]
+  A --> L["Step log<br/>{stepNo, rule, description, data}"]
+  L --> VIS["Step player<br/>SVG diagrams + tables, one screen per step"]
+  VIS --> R["Result Moore machine"]
+  R --> T["Test strings<br/>user + N random: Mealy vs Moore drop-first, ✔/✘"]
+  R --> C{"Algorithm C<br/>BFS over reachable state pairs"}
+  C -->|all pairs agree| OK["✔ Equivalent<br/>pairs explored"]
+  C -->|mismatch| CE["✘ Shortest counterexample<br/>+ aligned outputs"]

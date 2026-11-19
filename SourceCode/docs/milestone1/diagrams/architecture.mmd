@@ -1,0 +1,42 @@
+flowchart TB
+  subgraph UI["UI layer (browser, DOM)"]
+    HTML["index.html<br/>Simulator + Project design tabs"]
+    RENDER["src/ui/render.js<br/>tables, output alignment, equivalence result"]
+    GRAPH["src/ui/graph.js<br/>SVG state diagrams"]
+  end
+  subgraph CTRL["Controller layer"]
+    APP["src/ui/app.js<br/>editor, step player, tester, hand-conversion check"]
+    CLI["src/cli.js<br/>console front-end"]
+  end
+  subgraph CORE["Core algorithm layer (pure JS, no DOM)"]
+    MODEL["model.js<br/>Mealy / Moore types, StepLog"]
+    PARSER["parser.js<br/>parse + validate"]
+    A["mealyToMoore.js<br/>Algorithm A"]
+  end
+  subgraph VAL["Validation layer (pure JS)"]
+    SIM["simulate.js<br/>run + compare, random strings"]
+    EQ["equivalence.js<br/>Algorithm C (BFS)"]
+    TEST["tests/core.test.js<br/>node --test"]
+  end
+  PRESETS["examples/presets.js<br/>example machines"]
+  HTML --> APP
+  APP --> RENDER
+  APP --> GRAPH
+  APP --> PARSER
+  APP --> A
+  APP --> SIM
+  APP --> EQ
+  APP --> PRESETS
+  CLI --> PARSER
+  CLI --> A
+  CLI --> SIM
+  CLI --> EQ
+  CLI --> PRESETS
+  A --> MODEL
+  EQ --> SIM
+  EQ --> MODEL
+  TEST --> PARSER
+  TEST --> A
+  TEST --> SIM
+  TEST --> EQ
+  TEST --> PRESETS

@@ -1,0 +1,70 @@
+{
+  "name": "Example 2: edge cases",
+  "type": "mealy",
+  "states": [
+    "s",
+    "p",
+    "r",
+    "d"
+  ],
+  "inputs": [
+    "a",
+    "b"
+  ],
+  "outputs": [
+    "x",
+    "y",
+    "z"
+  ],
+  "start": "s",
+  "transitions": [
+    {
+      "from": "s",
+      "input": "a",
+      "to": "p",
+      "output": "x"
+    },
+    {
+      "from": "s",
+      "input": "b",
+      "to": "p",
+      "output": "y"
+    },
+    {
+      "from": "p",
+      "input": "a",
+      "to": "p",
+      "output": "z"
+    },
+    {
+      "from": "p",
+      "input": "b",
+      "to": "r",
+      "output": "x"
+    },
+    {
+      "from": "r",
+      "input": "a",
+      "to": "p",
+      "output": "y"
+    },
+    {
+      "from": "r",
+      "input": "b",
+      "to": "r",
+      "output": "x"
+    },
+    {
+      "from": "d",
+      "input": "a",
+      "to": "r",
+      "output": "z"
+    },
+    {
+      "from": "d",
+      "input": "b",
+      "to": "d",
+      "output": "z"
+    }
+  ]
+}

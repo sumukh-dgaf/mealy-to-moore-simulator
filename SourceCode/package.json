@@ -1,0 +1,9 @@
+{
+  "name": "mealy-moore-simulator",
+  "version": "0.1.0",
+  "description": "CSET302 Topic 14 - Mealy -> Moore conversion simulator (Milestone 1 prototype)",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}

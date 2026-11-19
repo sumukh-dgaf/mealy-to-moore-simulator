@@ -1,0 +1,63 @@
+classDiagram
+  direction LR
+  class Mealy {
+    +type = "mealy"
+    +states : string[]
+    +inputs : string[]
+    +outputs : string[]
+    +start : string
+    +delta : Q×Σ → Q
+    +lambda : Q×Σ → Δ
+  }
+  class Moore {
+    +type = "moore"
+    +states : string[]
+    +inputs : string[]
+    +outputs : string[]
+    +start : string
+    +delta : Q'×Σ → Q'
+    +out : Q' → Δ
+  }
+  class StepLog {
+    +steps : Step[]
+    +add(rule, description, data)
+  }
+  class Step {
+    +stepNo : number
+    +rule : string
+    +description : string
+    +data : object
+  }
+  class Parser {
+    <<module parser.js>>
+    +parseMachine(input, opts) : machine, errors
+    +parseTableText(text) : spec
+    +buildMachine(spec) : machine, errors
+    +toTableText(machine) : string
+  }
+  class Converter {
+    <<module mealyToMoore.js>>
+    +mealyToMoore(mealy, opts) : moore, steps, incoming, removed, bound
+  }
+  class Simulator {
+    <<module simulate.js>>
+    +toSymbols(text, inputs) : string[]
+    +runMealy(m, word) : states, outputs
+    +runMoore(m, word) : states, outputs
+    +compareOnWord(mealy, moore, word) : comparison
+    +randomWords(inputs, count, maxLen, rng) : string[][]
+  }
+  class EquivalenceChecker {
+    <<module equivalence.js>>
+    +checkEquivalence(mealy, moore) : equivalent, counterexample, pairsExplored, steps
+  }
+  StepLog "1" *-- "*" Step
+  Parser ..> Mealy : creates
+  Parser ..> Moore : creates (hand-converted check only)
+  Converter ..> Mealy : reads
+  Converter ..> Moore : creates
+  Converter ..> StepLog : writes
+  Simulator ..> Mealy : runs
+  Simulator ..> Moore : runs
+  EquivalenceChecker ..> Simulator : builds witness
+  EquivalenceChecker ..> StepLog : writes

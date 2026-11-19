@@ -1,0 +1,1571 @@
+{
+  "name": "TC-21: randomMealy(50, 5, 3, seed 21)",
+  "type": "mealy",
+  "states": [
+    "q0",
+    "q1",
+    "q2",
+    "q3",
+    "q4",
+    "q5",
+    "q6",
+    "q7",
+    "q8",
+    "q9",
+    "q10",
+    "q11",
+    "q12",
+    "q13",
+    "q14",
+    "q15",
+    "q16",
+    "q17",
+    "q18",
+    "q19",
+    "q20",
+    "q21",
+    "q22",
+    "q23",
+    "q24",
+    "q25",
+    "q26",
+    "q27",
+    "q28",
+    "q29",
+    "q30",
+    "q31",
+    "q32",
+    "q33",
+    "q34",
+    "q35",
+    "q36",
+    "q37",
+    "q38",
+    "q39",
+    "q40",
+    "q41",
+    "q42",
+    "q43",
+    "q44",
+    "q45",
+    "q46",
+    "q47",
+    "q48",
+    "q49"
+  ],
+  "inputs": [
+    "a0",
+    "a1",
+    "a2",
+    "a3",
+    "a4"
+  ],
+  "outputs": [
+    "o0",
+    "o1",
+    "o2"
+  ],
+  "start": "q0",
+  "transitions": [
+    {
+      "from": "q0",
+      "input": "a0",
+      "to": "q39",
+      "output": "o1"
+    },
+    {
+      "from": "q0",
+      "input": "a1",
+      "to": "q25",
+      "output": "o1"
+    },
+    {
+      "from": "q0",
+      "input": "a2",
+      "to": "q34",
+      "output": "o2"
+    },
+    {
+      "from": "q0",
+      "input": "a3",
+      "to": "q3",
+      "output": "o2"
+    },
+    {
+      "from": "q0",
+      "input": "a4",
+      "to": "q34",
+      "output": "o1"
+    },
+    {
+      "from": "q1",
+      "input": "a0",
+      "to": "q35",
+      "output": "o2"
+    },
+    {
+      "from": "q1",
+      "input": "a1",
+      "to": "q14",
+      "output": "o1"
+    },
+    {
+      "from": "q1",
+      "input": "a2",
+      "to": "q15",
+      "output": "o1"
+    },
+    {
+      "from": "q1",
+      "input": "a3",
+      "to": "q45",
+      "output": "o0"
+    },
+    {
+      "from": "q1",
+      "input": "a4",
+      "to": "q25",
+      "output": "o2"
+    },
+    {
+      "from": "q2",
+      "input": "a0",
+      "to": "q22",
+      "output": "o1"
+    },
+    {
+      "from": "q2",
+      "input": "a1",
+      "to": "q11",
+      "output": "o2"
+    },
+    {
+      "from": "q2",
+      "input": "a2",
+      "to": "q17",
+      "output": "o1"
+    },
+    {
+      "from": "q2",
+      "input": "a3",
+      "to": "q10",
+      "output": "o0"
+    },
+    {
+      "from": "q2",
+      "input": "a4",
+      "to": "q15",
+      "output": "o2"
+    },
+    {
+      "from": "q3",
+      "input": "a0",
+      "to": "q4",
+      "output": "o1"
+    },
+    {
+      "from": "q3",
+      "input": "a1",
+      "to": "q21",
+      "output": "o1"
+    },
+    {
+      "from": "q3",
+      "input": "a2",
+      "to": "q19",
+      "output": "o0"
+    },
+    {
+      "from": "q3",
+      "input": "a3",
+      "to": "q21",
+      "output": "o0"
+    },
+    {
+      "from": "q3",
+      "input": "a4",
+      "to": "q48",
+      "output": "o1"
+    },
+    {
+      "from": "q4",
+      "input": "a0",
+      "to": "q20",
+      "output": "o1"
+    },
+    {
+      "from": "q4",
+      "input": "a1",
+      "to": "q39",
+      "output": "o1"
+    },
+    {
+      "from": "q4",
+      "input": "a2",
+      "to": "q43",
+      "output": "o2"
+    },
+    {
+      "from": "q4",
+      "input": "a3",
+      "to": "q6",
+      "output": "o2"
+    },
+    {
+      "from": "q4",
+      "input": "a4",
+      "to": "q37",
+      "output": "o1"
+    },
+    {
+      "from": "q5",
+      "input": "a0",
+      "to": "q41",
+      "output": "o0"
+    },
+    {
+      "from": "q5",
+      "input": "a1",
+      "to": "q7",
+      "output": "o1"
+    },
+    {
+      "from": "q5",
+      "input": "a2",
+      "to": "q36",
+      "output": "o1"
+    },
+    {
+      "from": "q5",
+      "input": "a3",
+      "to": "q13",
+      "output": "o1"
+    },
+    {
+      "from": "q5",
+      "input": "a4",
+      "to": "q6",
+      "output": "o2"
+    },
+    {
+      "from": "q6",
+      "input": "a0",
+      "to": "q5",
+      "output": "o1"
+    },
+    {
+      "from": "q6",
+      "input": "a1",
+      "to": "q14",
+      "output": "o0"
+    },
+    {
+      "from": "q6",
+      "input": "a2",
+      "to": "q13",
+      "output": "o2"
+    },
+    {
+      "from": "q6",
+      "input": "a3",
+      "to": "q38",
+      "output": "o1"
+    },
+    {
+      "from": "q6",
+      "input": "a4",
+      "to": "q43",
+      "output": "o2"
+    },
+    {
+      "from": "q7",
+      "input": "a0",
+      "to": "q35",
+      "output": "o0"
+    },
+    {
+      "from": "q7",
+      "input": "a1",
+      "to": "q34",
+      "output": "o0"
+    },
+    {
+      "from": "q7",
+      "input": "a2",
+      "to": "q0",
+      "output": "o0"
+    },
+    {
+      "from": "q7",
+      "input": "a3",
+      "to": "q19",
+      "output": "o1"
+    },
+    {
+      "from": "q7",
+      "input": "a4",
+      "to": "q1",
+      "output": "o1"
+    },
+    {
+      "from": "q8",
+      "input": "a0",
+      "to": "q5",
+      "output": "o0"
+    },
+    {
+      "from": "q8",
+      "input": "a1",
+      "to": "q12",
+      "output": "o1"
+    },
+    {
+      "from": "q8",
+      "input": "a2",
+      "to": "q24",
+      "output": "o2"
+    },
+    {
+      "from": "q8",
+      "input": "a3",
+      "to": "q14",
+      "output": "o1"
+    },
+    {
+      "from": "q8",
+      "input": "a4",
+      "to": "q42",
+      "output": "o1"
+    },
+    {
+      "from": "q9",
+      "input": "a0",
+      "to": "q13",
+      "output": "o1"
+    },
+    {
+      "from": "q9",
+      "input": "a1",
+      "to": "q25",
+      "output": "o2"
+    },
+    {
+      "from": "q9",
+      "input": "a2",
+      "to": "q1",
+      "output": "o2"
+    },
+    {
+      "from": "q9",
+      "input": "a3",
+      "to": "q34",
+      "output": "o0"
+    },
+    {
+      "from": "q9",
+      "input": "a4",
+      "to": "q7",
+      "output": "o2"
+    },
+    {
+      "from": "q10",
+      "input": "a0",
+      "to": "q29",
+      "output": "o0"
+    },
+    {
+      "from": "q10",
+      "input": "a1",
+      "to": "q36",
+      "output": "o0"
+    },
+    {
+      "from": "q10",
+      "input": "a2",
+      "to": "q26",
+      "output": "o1"
+    },
+    {
+      "from": "q10",
+      "input": "a3",
+      "to": "q43",
+      "output": "o0"
+    },
+    {
+      "from": "q10",
+      "input": "a4",
+      "to": "q41",
+      "output": "o0"
+    },
+    {
+      "from": "q11",
+      "input": "a0",
+      "to": "q23",
+      "output": "o1"
+    },
+    {
+      "from": "q11",
+      "input": "a1",
+      "to": "q26",
+      "output": "o0"
+    },
+    {
+      "from": "q11",
+      "input": "a2",
+      "to": "q39",
+      "output": "o2"
+    },
+    {
+      "from": "q11",
+      "input": "a3",
+      "to": "q30",
+      "output": "o1"
+    },
+    {
+      "from": "q11",
+      "input": "a4",
+      "to": "q33",
+      "output": "o0"
+    },
+    {
+      "from": "q12",
+      "input": "a0",
+      "to": "q43",
+      "output": "o0"
+    },
+    {
+      "from": "q12",
+      "input": "a1",
+      "to": "q14",
+      "output": "o0"
+    },
+    {
+      "from": "q12",
+      "input": "a2",
+      "to": "q38",
+      "output": "o1"
+    },
+    {
+      "from": "q12",
+      "input": "a3",
+      "to": "q31",
+      "output": "o2"
+    },
+    {
+      "from": "q12",
+      "input": "a4",
+      "to": "q27",
+      "output": "o0"
+    },
+    {
+      "from": "q13",
+      "input": "a0",
+      "to": "q38",
+      "output": "o1"
+    },
+    {
+      "from": "q13",
+      "input": "a1",
+      "to": "q45",
+      "output": "o2"
+    },
+    {
+      "from": "q13",
+      "input": "a2",
+      "to": "q48",
+      "output": "o1"
+    },
+    {
+      "from": "q13",
+      "input": "a3",
+      "to": "q9",
+      "output": "o0"
+    },
+    {
+      "from": "q13",
+      "input": "a4",
+      "to": "q40",
+      "output": "o1"
+    },
+    {
+      "from": "q14",
+      "input": "a0",
+      "to": "q25",
+      "output": "o2"
+    },
+    {
+      "from": "q14",
+      "input": "a1",
+      "to": "q42",
+      "output": "o1"
+    },
+    {
+      "from": "q14",
+      "input": "a2",
+      "to": "q46",
+      "output": "o2"
+    },
+    {
+      "from": "q14",
+      "input": "a3",
+      "to": "q0",
+      "output": "o0"
+    },
+    {
+      "from": "q14",
+      "input": "a4",
+      "to": "q7",
+      "output": "o0"
+    },
+    {
+      "from": "q15",
+      "input": "a0",
+      "to": "q39",
+      "output": "o1"
+    },
+    {
+      "from": "q15",
+      "input": "a1",
+      "to": "q49",
+      "output": "o0"
+    },
+    {
+      "from": "q15",
+      "input": "a2",
+      "to": "q3",
+      "output": "o2"
+    },
+    {
+      "from": "q15",
+      "input": "a3",
+      "to": "q13",
+      "output": "o1"
+    },
+    {
+      "from": "q15",
+      "input": "a4",
+      "to": "q48",
+      "output": "o1"
+    },
+    {
+      "from": "q16",
+      "input": "a0",
+      "to": "q10",
+      "output": "o0"
+    },
+    {
+      "from": "q16",
+      "input": "a1",
+      "to": "q3",
+      "output": "o2"
+    },
+    {
+      "from": "q16",
+      "input": "a2",
+      "to": "q39",
+      "output": "o1"
+    },
+    {
+      "from": "q16",
+      "input": "a3",
+      "to": "q9",
+      "output": "o0"
+    },
+    {
+      "from": "q16",
+      "input": "a4",
+      "to": "q47",
+      "output": "o0"
+    },
+    {
+      "from": "q17",
+      "input": "a0",
+      "to": "q4",
+      "output": "o1"
+    },
+    {
+      "from": "q17",
+      "input": "a1",
+      "to": "q24",
+      "output": "o1"
+    },
+    {
+      "from": "q17",
+      "input": "a2",
+      "to": "q23",
+      "output": "o2"
+    },
+    {
+      "from": "q17",
+      "input": "a3",
+      "to": "q22",
+      "output": "o1"
+    },
+    {
+      "from": "q17",
+      "input": "a4",
+      "to": "q45",
+      "output": "o1"
+    },
+    {
+      "from": "q18",
+      "input": "a0",
+      "to": "q42",
+      "output": "o0"
+    },
+    {
+      "from": "q18",
+      "input": "a1",
+      "to": "q36",
+      "output": "o0"
+    },
+    {
+      "from": "q18",
+      "input": "a2",
+      "to": "q3",
+      "output": "o1"
+    },
+    {
+      "from": "q18",
+      "input": "a3",
+      "to": "q25",
+      "output": "o2"
+    },
+    {
+      "from": "q18",
+      "input": "a4",
+      "to": "q21",
+      "output": "o1"
+    },
+    {
+      "from": "q19",
+      "input": "a0",
+      "to": "q1",
+      "output": "o1"
+    },
+    {
+      "from": "q19",
+      "input": "a1",
+      "to": "q41",
+      "output": "o1"
+    },
+    {
+      "from": "q19",
+      "input": "a2",
+      "to": "q33",
+      "output": "o0"
+    },
+    {
+      "from": "q19",
+      "input": "a3",
+      "to": "q32",
+      "output": "o1"
+    },
+    {
+      "from": "q19",
+      "input": "a4",
+      "to": "q37",
+      "output": "o2"
+    },
+    {
+      "from": "q20",
+      "input": "a0",
+      "to": "q27",
+      "output": "o2"
+    },
+    {
+      "from": "q20",
+      "input": "a1",
+      "to": "q37",
+      "output": "o0"
+    },
+    {
+      "from": "q20",
+      "input": "a2",
+      "to": "q13",
+      "output": "o1"
+    },
+    {
+      "from": "q20",
+      "input": "a3",
+      "to": "q3",
+      "output": "o0"
+    },
+    {
+      "from": "q20",
+      "input": "a4",
+      "to": "q12",
+      "output": "o0"
+    },
+    {
+      "from": "q21",
+      "input": "a0",
+      "to": "q4",
+      "output": "o2"
+    },
+    {
+      "from": "q21",
+      "input": "a1",
+      "to": "q8",
+      "output": "o2"
+    },
+    {
+      "from": "q21",
+      "input": "a2",
+      "to": "q33",
+      "output": "o0"
+    },
+    {
+      "from": "q21",
+      "input": "a3",
+      "to": "q13",
+      "output": "o1"
+    },
+    {
+      "from": "q21",
+      "input": "a4",
+      "to": "q33",
+      "output": "o2"
+    },
+    {
+      "from": "q22",
+      "input": "a0",
+      "to": "q37",
+      "output": "o0"
+    },
+    {
+      "from": "q22",
+      "input": "a1",
+      "to": "q24",
+      "output": "o1"
+    },
+    {
+      "from": "q22",
+      "input": "a2",
+      "to": "q10",
+      "output": "o2"
+    },
+    {
+      "from": "q22",
+      "input": "a3",
+      "to": "q42",
+      "output": "o0"
+    },
+    {
+      "from": "q22",
+      "input": "a4",
+      "to": "q16",
+      "output": "o0"
+    },
+    {
+      "from": "q23",
+      "input": "a0",
+      "to": "q13",
+      "output": "o1"
+    },
+    {
+      "from": "q23",
+      "input": "a1",
+      "to": "q12",
+      "output": "o1"
+    },
+    {
+      "from": "q23",
+      "input": "a2",
+      "to": "q39",
+      "output": "o2"
+    },
+    {
+      "from": "q23",
+      "input": "a3",
+      "to": "q33",
+      "output": "o1"
+    },
+    {
+      "from": "q23",
+      "input": "a4",
+      "to": "q30",
+      "output": "o1"
+    },
+    {
+      "from": "q24",
+      "input": "a0",
+      "to": "q14",
+      "output": "o0"
+    },
+    {
+      "from": "q24",
+      "input": "a1",
+      "to": "q32",
+      "output": "o0"
+    },
+    {
+      "from": "q24",
+      "input": "a2",
+      "to": "q42",
+      "output": "o2"
+    },
+    {
+      "from": "q24",
+      "input": "a3",
+      "to": "q16",
+      "output": "o2"
+    },
+    {
+      "from": "q24",
+      "input": "a4",
+      "to": "q2",
+      "output": "o1"
+    },
+    {
+      "from": "q25",
+      "input": "a0",
+      "to": "q2",
+      "output": "o1"
+    },
+    {
+      "from": "q25",
+      "input": "a1",
+      "to": "q46",
+      "output": "o2"
+    },
+    {
+      "from": "q25",
+      "input": "a2",
+      "to": "q35",
+      "output": "o0"
+    },
+    {
+      "from": "q25",
+      "input": "a3",
+      "to": "q38",
+      "output": "o0"
+    },
+    {
+      "from": "q25",
+      "input": "a4",
+      "to": "q29",
+      "output": "o1"
+    },
+    {
+      "from": "q26",
+      "input": "a0",
+      "to": "q46",
+      "output": "o2"
+    },
+    {
+      "from": "q26",
+      "input": "a1",
+      "to": "q40",
+      "output": "o0"
+    },
+    {
+      "from": "q26",
+      "input": "a2",
+      "to": "q41",
+      "output": "o1"
+    },
+    {
+      "from": "q26",
+      "input": "a3",
+      "to": "q2",
+      "output": "o2"
+    },
+    {
+      "from": "q26",
+      "input": "a4",
+      "to": "q10",
+      "output": "o0"
+    },
+    {
+      "from": "q27",
+      "input": "a0",
+      "to": "q43",
+      "output": "o0"
+    },
+    {
+      "from": "q27",
+      "input": "a1",
+      "to": "q32",
+      "output": "o0"
+    },
+    {
+      "from": "q27",
+      "input": "a2",
+      "to": "q43",
+      "output": "o1"
+    },
+    {
+      "from": "q27",
+      "input": "a3",
+      "to": "q12",
+      "output": "o1"
+    },
+    {
+      "from": "q27",
+      "input": "a4",
+      "to": "q15",
+      "output": "o0"
+    },
+    {
+      "from": "q28",
+      "input": "a0",
+      "to": "q34",
+      "output": "o1"
+    },
+    {
+      "from": "q28",
+      "input": "a1",
+      "to": "q1",
+      "output": "o2"
+    },
+    {
+      "from": "q28",
+      "input": "a2",
+      "to": "q2",
+      "output": "o1"
+    },
+    {
+      "from": "q28",
+      "input": "a3",
+      "to": "q24",
+      "output": "o0"
+    },
+    {
+      "from": "q28",
+      "input": "a4",
+      "to": "q10",
+      "output": "o0"
+    },
+    {
+      "from": "q29",
+      "input": "a0",
+      "to": "q48",
+      "output": "o2"
+    },
+    {
+      "from": "q29",
+      "input": "a1",
+      "to": "q16",
+      "output": "o0"
+    },
+    {
+      "from": "q29",
+      "input": "a2",
+      "to": "q0",
+      "output": "o1"
+    },
+    {
+      "from": "q29",
+      "input": "a3",
+      "to": "q24",
+      "output": "o0"
+    },
+    {
+      "from": "q29",
+      "input": "a4",
+      "to": "q23",
+      "output": "o1"
+    },
+    {
+      "from": "q30",
+      "input": "a0",
+      "to": "q46",
+      "output": "o1"
+    },
+    {
+      "from": "q30",
+      "input": "a1",
+      "to": "q14",
+      "output": "o1"
+    },
+    {
+      "from": "q30",
+      "input": "a2",
+      "to": "q5",
+      "output": "o0"
+    },
+    {
+      "from": "q30",
+      "input": "a3",
+      "to": "q25",
+      "output": "o1"
+    },
+    {
+      "from": "q30",
+      "input": "a4",
+      "to": "q4",
+      "output": "o1"
+    },
+    {
+      "from": "q31",
+      "input": "a0",
+      "to": "q20",
+      "output": "o0"
+    },
+    {
+      "from": "q31",
+      "input": "a1",
+      "to": "q11",
+      "output": "o0"
+    },
+    {
+      "from": "q31",
+      "input": "a2",
+      "to": "q0",
+      "output": "o0"
+    },
+    {
+      "from": "q31",
+      "input": "a3",
+      "to": "q10",
+      "output": "o0"
+    },
+    {
+      "from": "q31",
+      "input": "a4",
+      "to": "q11",
+      "output": "o2"
+    },
+    {
+      "from": "q32",
+      "input": "a0",
+      "to": "q33",
+      "output": "o1"
+    },
+    {
+      "from": "q32",
+      "input": "a1",
+      "to": "q0",
+      "output": "o0"
+    },
+    {
+      "from": "q32",
+      "input": "a2",
+      "to": "q30",
+      "output": "o1"
+    },
+    {
+      "from": "q32",
+      "input": "a3",
+      "to": "q30",
+      "output": "o1"
+    },
+    {
+      "from": "q32",
+      "input": "a4",
+      "to": "q19",
+      "output": "o0"
+    },
+    {
+      "from": "q33",
+      "input": "a0",
+      "to": "q16",
+      "output": "o0"
+    },
+    {
+      "from": "q33",
+      "input": "a1",
+      "to": "q33",
+      "output": "o2"
+    },
+    {
+      "from": "q33",
+      "input": "a2",
+      "to": "q31",
+      "output": "o0"
+    },
+    {
+      "from": "q33",
+      "input": "a3",
+      "to": "q41",
+      "output": "o2"
+    },
+    {
+      "from": "q33",
+      "input": "a4",
+      "to": "q23",
+      "output": "o1"
+    },
+    {
+      "from": "q34",
+      "input": "a0",
+      "to": "q35",
+      "output": "o2"
+    },
+    {
+      "from": "q34",
+      "input": "a1",
+      "to": "q41",
+      "output": "o1"
+    },
+    {
+      "from": "q34",
+      "input": "a2",
+      "to": "q13",
+      "output": "o0"
+    },
+    {
+      "from": "q34",
+      "input": "a3",
+      "to": "q30",
+      "output": "o1"
+    },
+    {
+      "from": "q34",
+      "input": "a4",
+      "to": "q24",
+      "output": "o1"
+    },
+    {
+      "from": "q35",
+      "input": "a0",
+      "to": "q40",
+      "output": "o2"
+    },
+    {
+      "from": "q35",
+      "input": "a1",
+      "to": "q48",
+      "output": "o2"
+    },
+    {
+      "from": "q35",
+      "input": "a2",
+      "to": "q4",
+      "output": "o1"
+    },
+    {
+      "from": "q35",
+      "input": "a3",
+      "to": "q7",
+      "output": "o2"
+    },
+    {
+      "from": "q35",
+      "input": "a4",
+      "to": "q49",
+      "output": "o1"
+    },
+    {
+      "from": "q36",
+      "input": "a0",
+      "to": "q25",
+      "output": "o1"
+    },
+    {
+      "from": "q36",
+      "input": "a1",
+      "to": "q21",
+      "output": "o2"
+    },
+    {
+      "from": "q36",
+      "input": "a2",
+      "to": "q10",
+      "output": "o2"
+    },
+    {
+      "from": "q36",
+      "input": "a3",
+      "to": "q36",
+      "output": "o1"
+    },
+    {
+      "from": "q36",
+      "input": "a4",
+      "to": "q16",
+      "output": "o0"
+    },
+    {
+      "from": "q37",
+      "input": "a0",
+      "to": "q3",
+      "output": "o0"
+    },
+    {
+      "from": "q37",
+      "input": "a1",
+      "to": "q41",
+      "output": "o2"
+    },
+    {
+      "from": "q37",
+      "input": "a2",
+      "to": "q26",
+      "output": "o2"
+    },
+    {
+      "from": "q37",
+      "input": "a3",
+      "to": "q1",
+      "output": "o0"
+    },
+    {
+      "from": "q37",
+      "input": "a4",
+      "to": "q27",
+      "output": "o1"
+    },
+    {
+      "from": "q38",
+      "input": "a0",
+      "to": "q10",
+      "output": "o1"
+    },
+    {
+      "from": "q38",
+      "input": "a1",
+      "to": "q22",
+      "output": "o0"
+    },
+    {
+      "from": "q38",
+      "input": "a2",
+      "to": "q22",
+      "output": "o0"
+    },
+    {
+      "from": "q38",
+      "input": "a3",
+      "to": "q4",
+      "output": "o2"
+    },
+    {
+      "from": "q38",
+      "input": "a4",
+      "to": "q2",
+      "output": "o0"
+    },
+    {
+      "from": "q39",
+      "input": "a0",
+      "to": "q8",
+      "output": "o2"
+    },
+    {
+      "from": "q39",
+      "input": "a1",
+      "to": "q10",
+      "output": "o1"
+    },
+    {
+      "from": "q39",
+      "input": "a2",
+      "to": "q18",
+      "output": "o0"
+    },
+    {
+      "from": "q39",
+      "input": "a3",
+      "to": "q39",
+      "output": "o0"
+    },
+    {
+      "from": "q39",
+      "input": "a4",
+      "to": "q13",
+      "output": "o2"
+    },
+    {
+      "from": "q40",
+      "input": "a0",
+      "to": "q36",
+      "output": "o0"
+    },
+    {
+      "from": "q40",
+      "input": "a1",
+      "to": "q12",
+      "output": "o0"
+    },
+    {
+      "from": "q40",
+      "input": "a2",
+      "to": "q18",
+      "output": "o0"
+    },
+    {
+      "from": "q40",
+      "input": "a3",
+      "to": "q19",
+      "output": "o2"
+    },
+    {
+      "from": "q40",
+      "input": "a4",
+      "to": "q26",
+      "output": "o0"
+    },
+    {
+      "from": "q41",
+      "input": "a0",
+      "to": "q41",
+      "output": "o0"
+    },
+    {
+      "from": "q41",
+      "input": "a1",
+      "to": "q5",
+      "output": "o2"
+    },
+    {
+      "from": "q41",
+      "input": "a2",
+      "to": "q34",
+      "output": "o2"
+    },
+    {
+      "from": "q41",
+      "input": "a3",
+      "to": "q40",
+      "output": "o2"
+    },
+    {
+      "from": "q41",
+      "input": "a4",
+      "to": "q12",
+      "output": "o2"
+    },
+    {
+      "from": "q42",
+      "input": "a0",
+      "to": "q25",
+      "output": "o0"
+    },
+    {
+      "from": "q42",
+      "input": "a1",
+      "to": "q24",
+      "output": "o1"
+    },
+    {
+      "from": "q42",
+      "input": "a2",
+      "to": "q42",
+      "output": "o1"
+    },
+    {
+      "from": "q42",
+      "input": "a3",
+      "to": "q42",
+      "output": "o0"
+    },
+    {
+      "from": "q42",
+      "input": "a4",
+      "to": "q12",
+      "output": "o1"
+    },
+    {
+      "from": "q43",
+      "input": "a0",
+      "to": "q28",
+      "output": "o1"
+    },
+    {
+      "from": "q43",
+      "input": "a1",
+      "to": "q6",
+      "output": "o1"
+    },
+    {
+      "from": "q43",
+      "input": "a2",
+      "to": "q6",
+      "output": "o0"
+    },
+    {
+      "from": "q43",
+      "input": "a3",
+      "to": "q4",
+      "output": "o0"
+    },
+    {
+      "from": "q43",
+      "input": "a4",
+      "to": "q35",
+      "output": "o0"
+    },
+    {
+      "from": "q44",
+      "input": "a0",
+      "to": "q26",
+      "output": "o1"
+    },
+    {
+      "from": "q44",
+      "input": "a1",
+      "to": "q41",
+      "output": "o1"
+    },
+    {
+      "from": "q44",
+      "input": "a2",
+      "to": "q35",
+      "output": "o1"
+    },
+    {
+      "from": "q44",
+      "input": "a3",
+      "to": "q18",
+      "output": "o0"
+    },
+    {
+      "from": "q44",
+      "input": "a4",
+      "to": "q21",
+      "output": "o1"
+    },
+    {
+      "from": "q45",
+      "input": "a0",
+      "to": "q33",
+      "output": "o2"
+    },
+    {
+      "from": "q45",
+      "input": "a1",
+      "to": "q45",
+      "output": "o2"
+    },
+    {
+      "from": "q45",
+      "input": "a2",
+      "to": "q45",
+      "output": "o1"
+    },
+    {
+      "from": "q45",
+      "input": "a3",
+      "to": "q26",
+      "output": "o1"
+    },
+    {
+      "from": "q45",
+      "input": "a4",
+      "to": "q0",
+      "output": "o2"
+    },
+    {
+      "from": "q46",
+      "input": "a0",
+      "to": "q12",
+      "output": "o1"
+    },
+    {
+      "from": "q46",
+      "input": "a1",
+      "to": "q34",
+      "output": "o1"
+    },
+    {
+      "from": "q46",
+      "input": "a2",
+      "to": "q45",
+      "output": "o0"
+    },
+    {
+      "from": "q46",
+      "input": "a3",
+      "to": "q44",
+      "output": "o1"
+    },
+    {
+      "from": "q46",
+      "input": "a4",
+      "to": "q38",
+      "output": "o0"
+    },
+    {
+      "from": "q47",
+      "input": "a0",
+      "to": "q49",
+      "output": "o0"
+    },
+    {
+      "from": "q47",
+      "input": "a1",
+      "to": "q43",
+      "output": "o0"
+    },
+    {
+      "from": "q47",
+      "input": "a2",
+      "to": "q0",
+      "output": "o0"
+    },
+    {
+      "from": "q47",
+      "input": "a3",
+      "to": "q49",
+      "output": "o0"
+    },
+    {
+      "from": "q47",
+      "input": "a4",
+      "to": "q49",
+      "output": "o2"
+    },
+    {
+      "from": "q48",
+      "input": "a0",
+      "to": "q5",
+      "output": "o1"
+    },
+    {
+      "from": "q48",
+      "input": "a1",
+      "to": "q20",
+      "output": "o2"
+    },
+    {
+      "from": "q48",
+      "input": "a2",
+      "to": "q21",
+      "output": "o1"
+    },
+    {
+      "from": "q48",
+      "input": "a3",
+      "to": "q43",
+      "output": "o0"
+    },
+    {
+      "from": "q48",
+      "input": "a4",
+      "to": "q5",
+      "output": "o0"
+    },
+    {
+      "from": "q49",
+      "input": "a0",
+      "to": "q12",
+      "output": "o0"
+    },
+    {
+      "from": "q49",
+      "input": "a1",
+      "to": "q49",
+      "output": "o2"
+    },
+    {
+      "from": "q49",
+      "input": "a2",
+      "to": "q26",
+      "output": "o1"
+    },
+    {
+      "from": "q49",
+      "input": "a3",
+      "to": "q39",
+      "output": "o2"
+    },
+    {
+      "from": "q49",
+      "input": "a4",
+      "to": "q3",
+      "output": "o0"
+    }
+  ]
+}

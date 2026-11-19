@@ -1,0 +1,43 @@
+{
+  "name": "TC-02b: running parity of 1s (output 1 while the number of 1s read is odd)",
+  "type": "mealy",
+  "states": [
+    "E",
+    "O"
+  ],
+  "inputs": [
+    "0",
+    "1"
+  ],
+  "outputs": [
+    "0",
+    "1"
+  ],
+  "start": "E",
+  "transitions": [
+    {
+      "from": "E",
+      "input": "0",
+      "to": "E",
+      "output": "0"
+    },
+    {
+      "from": "E",
+      "input": "1",
+      "to": "O",
+      "output": "1"
+    },
+    {
+      "from": "O",
+      "input": "0",
+      "to": "O",
+      "output": "1"
+    },
+    {
+      "from": "O",
+      "input": "1",
+      "to": "E",
+      "output": "0"
+    }
+  ]
+}

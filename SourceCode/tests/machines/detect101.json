@@ -1,0 +1,56 @@
+{
+  "name": "TC-02c: overlapping 101 detector (output 1 on the last 1 of 101)",
+  "type": "mealy",
+  "states": [
+    "a",
+    "b",
+    "c"
+  ],
+  "inputs": [
+    "0",
+    "1"
+  ],
+  "outputs": [
+    "0",
+    "1"
+  ],
+  "start": "a",
+  "transitions": [
+    {
+      "from": "a",
+      "input": "0",
+      "to": "a",
+      "output": "0"
+    },
+    {
+      "from": "a",
+      "input": "1",
+      "to": "b",
+      "output": "0"
+    },
+    {
+      "from": "b",
+      "input": "0",
+      "to": "c",
+      "output": "0"
+    },
+    {
+      "from": "b",
+      "input": "1",
+      "to": "b",
+      "output": "0"
+    },
+    {
+      "from": "c",
+      "input": "0",
+      "to": "a",
+      "output": "0"
+    },
+    {
+      "from": "c",
+      "input": "1",
+      "to": "b",
+      "output": "1"
+    }
+  ]
+}

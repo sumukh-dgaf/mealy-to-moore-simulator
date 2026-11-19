@@ -1,0 +1,22 @@
+{
+  "name": "TC-07: single state, single input symbol, single output symbol",
+  "type": "mealy",
+  "states": [
+    "q"
+  ],
+  "inputs": [
+    "a"
+  ],
+  "outputs": [
+    "x"
+  ],
+  "start": "q",
+  "transitions": [
+    {
+      "from": "q",
+      "input": "a",
+      "to": "q",
+      "output": "x"
+    }
+  ]
+}

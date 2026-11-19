@@ -1,0 +1,14 @@
+flowchart LR
+  startArrow[" "] --> s0
+  style startArrow fill:none,stroke:none
+  s0(("s"))
+  s1(("p"))
+  s2(("r"))
+  s3(("d"))
+  s0 -->|"a/x, b/y"| s1
+  s1 -->|"a/z"| s1
+  s1 -->|"b/x"| s2
+  s2 -->|"a/y"| s1
+  s2 -->|"b/x"| s2
+  s3 -->|"a/z"| s2
+  s3 -->|"b/z"| s3

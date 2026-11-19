@@ -1,0 +1,55 @@
+{
+  "name": "TC-11: hand conversion of Example 1 with one wrong state output (λ′([q1,1]) = 0 instead of 1)",
+  "type": "moore",
+  "states": [
+    "[q0,0]",
+    "[q1,0]",
+    "[q1,1]"
+  ],
+  "inputs": [
+    "0",
+    "1"
+  ],
+  "outputs": [
+    "0",
+    "1"
+  ],
+  "start": "[q0,0]",
+  "stateOutputs": {
+    "[q0,0]": "0",
+    "[q1,0]": "0",
+    "[q1,1]": "0"
+  },
+  "transitions": [
+    {
+      "from": "[q0,0]",
+      "input": "0",
+      "to": "[q0,0]"
+    },
+    {
+      "from": "[q0,0]",
+      "input": "1",
+      "to": "[q1,0]"
+    },
+    {
+      "from": "[q1,0]",
+      "input": "0",
+      "to": "[q0,0]"
+    },
+    {
+      "from": "[q1,0]",
+      "input": "1",
+      "to": "[q1,1]"
+    },
+    {
+      "from": "[q1,1]",
+      "input": "0",
+      "to": "[q0,0]"
+    },
+    {
+      "from": "[q1,1]",
+      "input": "1",
+      "to": "[q1,1]"
+    }
+  ]
+}

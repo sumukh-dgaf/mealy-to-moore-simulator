@@ -1,0 +1,27 @@
+sequenceDiagram
+  actor User
+  participant UI as index.html
+  participant App as app.js (controller)
+  participant Parser as parser.js
+  participant Conv as mealyToMoore.js
+  participant Eq as equivalence.js
+  participant Graph as graph.js
+  User->>UI: click "Convert to Moore"
+  UI->>App: run()
+  App->>Parser: parseMachine(spec from editor, {mealyOnly: true})
+  alt invalid input or Moore machine
+    Parser-->>App: {machine: null, errors[]}
+    App->>UI: list errors (stop)
+  else valid Mealy machine
+    Parser-->>App: {machine: Mealy, errors: []}
+    App->>Conv: mealyToMoore(mealy, opts)
+    Conv-->>App: {machine: Moore, steps[], removed, bound, origin}
+    App->>Eq: checkEquivalence(mealy, moore)
+    Eq-->>App: {equivalent, pairs}
+    App->>App: buildSteps(step log) → player steps
+    App->>Graph: draw(diagram, machine, highlights) for step 1
+    Graph-->>UI: SVG diagram
+    App->>UI: result strip, timeline, step text, working table
+    User->>UI: Next / Play
+    UI->>App: show(i): redraw diagram + table for step i
+  end

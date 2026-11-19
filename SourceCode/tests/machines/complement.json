@@ -1,0 +1,30 @@
+{
+  "name": "TC-02a: one-state complementer (outputs the complement of each input bit)",
+  "type": "mealy",
+  "states": [
+    "q"
+  ],
+  "inputs": [
+    "0",
+    "1"
+  ],
+  "outputs": [
+    "0",
+    "1"
+  ],
+  "start": "q",
+  "transitions": [
+    {
+      "from": "q",
+      "input": "0",
+      "to": "q",
+      "output": "1"
+    },
+    {
+      "from": "q",
+      "input": "1",
+      "to": "q",
+      "output": "0"
+    }
+  ]
+}

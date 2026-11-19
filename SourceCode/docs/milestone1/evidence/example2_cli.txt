@@ -1,0 +1,62 @@
+== Input (mealy) ==
+type: mealy
+start: s
+outputs: x y z
+state | a   | b
+s     | p/x | p/y
+p     | p/z | r/x
+r     | p/y | r/x
+d     | r/z | d/z
+
+== Step log ==
+  1. [A1] O(s) = {}  (no incoming transitions)
+  2. [A1] O(p) = {x, y, z}  from s--a/x, s--b/y, p--a/z, r--a/y
+  3. [A1] O(r) = {x, z}  from p--b/x, r--b/x, d--a/z
+  4. [A1] O(d) = {z}  from d--b/z
+  5. [A3] s has no incoming transitions: create [s,-] with default output λ'([s,-]) = x
+  6. [A2] Create [p,x] with λ'([p,x]) = x
+  7. [A2] Create [p,y] with λ'([p,y]) = y
+  8. [A2] Create [p,z] with λ'([p,z]) = z
+  9. [A2] Create [r,x] with λ'([r,x]) = x
+ 10. [A2] Create [r,z] with λ'([r,z]) = z
+ 11. [A2] Create [d,z] with λ'([d,z]) = z
+ 12. [A4] δ'([s,-], a) = [p,x]   because δ(s, a) = p and λ(s, a) = x
+ 13. [A4] δ'([s,-], b) = [p,y]   because δ(s, b) = p and λ(s, b) = y
+ 14. [A4] δ'([p,x], a) = [p,z]   because δ(p, a) = p and λ(p, a) = z
+ 15. [A4] δ'([p,x], b) = [r,x]   because δ(p, b) = r and λ(p, b) = x
+ 16. [A4] δ'([p,y], a) = [p,z]   because δ(p, a) = p and λ(p, a) = z
+ 17. [A4] δ'([p,y], b) = [r,x]   because δ(p, b) = r and λ(p, b) = x
+ 18. [A4] δ'([p,z], a) = [p,z]   because δ(p, a) = p and λ(p, a) = z
+ 19. [A4] δ'([p,z], b) = [r,x]   because δ(p, b) = r and λ(p, b) = x
+ 20. [A4] δ'([r,x], a) = [p,y]   because δ(r, a) = p and λ(r, a) = y
+ 21. [A4] δ'([r,x], b) = [r,x]   because δ(r, b) = r and λ(r, b) = x
+ 22. [A4] δ'([r,z], a) = [p,y]   because δ(r, a) = p and λ(r, a) = y
+ 23. [A4] δ'([r,z], b) = [r,x]   because δ(r, b) = r and λ(r, b) = x
+ 24. [A4] δ'([d,z], a) = [r,z]   because δ(d, a) = r and λ(d, a) = z
+ 25. [A4] δ'([d,z], b) = [d,z]   because δ(d, b) = d and λ(d, b) = z
+ 26. [A5] Start = [s,-]: s has no incoming transitions, so it has a single copy
+ 27. [A6] Removed unreachable Moore states: [r,z], [d,z]
+ 28. [BOUND] |Q'| = 5 (created 7, removed 2) ≤ |Q|·|Δ| = 4·3 = 12
+
+== Output (moore) ==
+type: moore
+start: [s,-]
+outputs: x y z
+state | out | a     | b
+[s,-] | x   | [p,x] | [p,y]
+[p,x] | x   | [p,z] | [r,x]
+[p,y] | y   | [p,z] | [r,x]
+[p,z] | z   | [p,z] | [r,x]
+[r,x] | x   | [p,y] | [r,x]
+
+w = abba
+  Mealy states : s p r r p   output xxxy
+  Moore states : [s,-] [p,x] [r,x] [r,x] [p,y]   output xxxxy
+  Moore, first symbol dropped: xxxy  ✔ match
+w = aab
+  Mealy states : s p p r   output xzx
+  Moore states : [s,-] [p,x] [p,z] [r,x]   output xxzx
+  Moore, first symbol dropped: xzx  ✔ match
+
+== Equivalence (Algorithm C) ==
+✔ equivalent — 5 reachable pairs: (s, [s,-]) (p, [p,x]) (p, [p,y]) (p, [p,z]) (r, [r,x])
