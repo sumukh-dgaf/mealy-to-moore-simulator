@@ -1,0 +1,1 @@
+Hand-written model replies in the exact shape of `RESPONSE_SCHEMA` (`src/core/questionSchema.js`), used by the automated tests and the mocked UI checks instead of live Gemini calls. They are NOT recordings of real API calls: no live call was made when they were written.

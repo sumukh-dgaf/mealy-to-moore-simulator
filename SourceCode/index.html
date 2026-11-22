@@ -86,6 +86,33 @@
     </aside>
 
     <div class="main-col">
+      <!-- Solve from a question: the only part that needs internet (Google Gemini API) and an API key -->
+      <details id="solver" class="card solver" open>
+        <summary><h2>Solve from a question</h2><span class="badge-ai">AI · needs internet and a free Gemini API key</span></summary>
+        <p class="hint">Paste the question in any wording, or add a photo of it. Google Gemini only <b>reads</b> it and returns a Mealy machine; you check that machine below, then the simulator's own algorithm converts it. Google may use free-tier inputs to improve its products, so do not paste private data.</p>
+        <p id="aiKeyHint" class="hint">Paste your free key from aistudio.google.com once; it stays on this computer.</p>
+        <div class="solver-key">
+          <span id="aiSaved" class="key-chip" hidden>Gemini key saved on this device ✓ <button id="aiChange" class="linkbtn" type="button">Change key</button></span>
+          <span id="aiKeyEntry" class="key-entry">
+            <label>Gemini API key <input id="aiKey" type="password" autocomplete="off" spellcheck="false" placeholder="from aistudio.google.com/apikey"></label>
+            <label class="inline"><input id="aiRemember" type="checkbox" checked> Remember on this device</label>
+          </span>
+          <button id="aiForget" class="btn small" type="button">Forget key</button>
+          <label>Model id <input id="aiModel" type="text" spellcheck="false" aria-describedby="aiModelHint"></label>
+          <span id="aiModelHint" class="hint">change only if Google renames or retires the model</span>
+        </div>
+        <div id="aiExamples" class="samples"><span>Example questions:</span></div>
+        <label for="aiQuestion" class="label">Question</label>
+        <textarea id="aiQuestion" rows="6" spellcheck="true" placeholder="Type or paste the Mealy → Moore question…"></textarea>
+        <div class="row solver-actions">
+          <label class="inline">Photo of the question (optional, PNG/JPEG/WebP) <input id="aiImage" type="file" accept="image/png,image/jpeg,image/webp"></label>
+          <span id="aiImageName" class="hint"></span>
+          <button id="aiImageClear" class="btn small" type="button" hidden>Remove photo</button>
+          <button id="aiAsk" class="btn primary" type="button">Read the question</button>
+        </div>
+        <div id="aiStatus" class="msg" role="status"></div>
+        <div id="aiPreview" hidden></div>
+      </details>
       <section id="emptyState" class="card empty-state">
         <h2>No machine converted yet</h2>
         <p>Load an example or fill in your own Mealy machine, then press Convert to Moore.</p>
@@ -133,6 +160,22 @@
             <div id="work"></div>
           </div>
         </div>
+      </section>
+
+      <section id="explain" class="card" hidden>
+        <div class="explain-head">
+          <h2>Explanation in words</h2>
+          <label class="inline">Moore state names
+            <select id="nameStyle">
+              <option value="bracket">[A,0]</option>
+              <option value="textbook">A0 (textbook)</option>
+            </select>
+          </label>
+          <button id="copyAnswerBtn" class="btn small" type="button">Copy answer</button>
+          <span id="copyMsg" role="status"></span>
+        </div>
+        <div id="explainBody"></div>
+        <textarea id="answerText" rows="12" readonly hidden aria-label="Answer text to copy"></textarea>
       </section>
 
       <div class="bottom-row">
@@ -408,9 +451,12 @@
 <script src="src/core/mealyToMoore.js"></script>
 <script src="src/core/simulate.js"></script>
 <script src="src/core/equivalence.js"></script>
+<script src="src/core/questionSchema.js"></script>
+<script src="src/core/explain.js"></script>
 <script src="examples/presets.js"></script>
 <script src="src/ui/graph.js"></script>
 <script src="src/ui/render.js"></script>
 <script src="src/ui/app.js"></script>
+<script src="src/ui/solve.js"></script>
 </body>
 </html>

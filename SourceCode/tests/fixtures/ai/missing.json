@@ -1,0 +1,57 @@
+{
+  "kind": "given_machine",
+  "states": [
+    "A",
+    "B"
+  ],
+  "inputs": [
+    "0",
+    "1"
+  ],
+  "outputs": [
+    "0",
+    "1"
+  ],
+  "start": "A",
+  "transitions": [
+    {
+      "from": "A",
+      "input": "0",
+      "to": "A",
+      "output": "0"
+    },
+    {
+      "from": "A",
+      "input": "1",
+      "to": "B",
+      "output": "0"
+    },
+    {
+      "from": "B",
+      "input": "0",
+      "to": "A",
+      "output": "0"
+    }
+  ],
+  "state_meanings": [
+    {
+      "state": "A",
+      "meaning": "the last input was not 1 (or nothing has been read)"
+    },
+    {
+      "state": "B",
+      "meaning": "the last input was 1"
+    }
+  ],
+  "assumptions": [],
+  "missing": [
+    "The question does not say where B goes on input 1."
+  ],
+  "test_cases": [
+    {
+      "input": "10",
+      "expected_output": "00",
+      "reason": "given in the question"
+    }
+  ]
+}

@@ -125,7 +125,7 @@
   function showInputErrors(errors) {
     $('inputMsg').className = 'msg error';
     $('inputMsg').innerHTML = '<b>Please fix the input:</b><ul>' + errors.map((e) => `<li>${esc(e)}</li>`).join('') + '</ul>';
-    $('player').hidden = $('tester').hidden = $('checker').hidden = true;
+    $('player').hidden = $('tester').hidden = $('checker').hidden = $('explain').hidden = true;
     $('emptyState').hidden = false;
   }
 
@@ -153,7 +153,7 @@
     $('inputMsg').textContent = 'Input is a valid, complete, deterministic Mealy machine.';
     steps = buildSteps(res);
     $('emptyState').hidden = true;
-    $('player').hidden = $('tester').hidden = $('checker').hidden = false;
+    $('player').hidden = $('tester').hidden = $('checker').hidden = $('explain').hidden = false;
     $('testOut').innerHTML = '';
     $('testLog').hidden = true;
     $('testLog').tBodies[0].innerHTML = '';
@@ -163,8 +163,35 @@
     renderTimeline();
     renderSamples();
     renderStepList();
+    renderExplanation();
     show(0);
   }
+
+  /* ================= Explanation in words (generated from the step log; no AI) ================= */
+  const explanationNames = () => M.mooreDisplayNames(res.conv, res.mealy, $('nameStyle').value);
+
+  function renderExplanation() {
+    const { names, fellBack } = explanationNames();
+    $('explainBody').innerHTML = (fellBack ? '<p class="note">Textbook names (A0) would not be unique for this machine, so the [A,0] names are shown.</p>' : '') +
+      M.explainConversion(res.mealy, res.conv, names).map((sec) =>
+        `<h3>${esc(sec.heading)}</h3><ul class="facts">${sec.sentences.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`).join('');
+    $('copyMsg').textContent = '';
+    $('answerText').hidden = true;
+  }
+  $('nameStyle').addEventListener('change', () => { if (res) renderExplanation(); });
+  $('copyAnswerBtn').addEventListener('click', () => {
+    const text = M.answerText(res.mealy, res.conv, explanationNames().names);
+    const copied = () => { $('copyMsg').className = 'good'; $('copyMsg').textContent = 'Copied: the explanation and the Moore table.'; };
+    const manual = () => {
+      $('answerText').hidden = false;
+      $('answerText').value = text;
+      $('answerText').select();
+      $('copyMsg').className = 'bad';
+      $('copyMsg').textContent = 'The browser blocked copying; the answer is selected below, press Ctrl+C.';
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(copied, manual);
+    else manual();
+  });
 
   /* The Moore machine as built by the first `upto` steps of the log (all created states, nothing pruned). */
   function mooreFromSteps(r, upto) {
@@ -536,6 +563,30 @@
     if (navigator.clipboard) navigator.clipboard.writeText(link).then(done, manual);
     else manual();
   });
+
+  /* ================= Hooks for the question solver (src/ui/solve.js) ================= */
+  window.MMApp = {
+    /**
+     * Load a Mealy machine (complete or with missing cells) into the editor without converting it.
+     * @param {Object} machine  {states, inputs, outputs, start, delta, lambda}
+     * @param {string} note     shown under the example selector
+     * @param {string[]} [tests] sample strings for the tester ("ε" = empty)
+     */
+    useMachine(machine, note, tests) {
+      $('preset').value = '';
+      $('presetNote').textContent = note;
+      samples = tests && tests.length ? tests : null;
+      $('inputMsg').className = 'msg';
+      $('inputMsg').textContent = '';
+      loadMachine(machine);
+    },
+    /** Load a validated Mealy machine and run the normal conversion (same arguments). */
+    convert(machine, note, tests) {
+      window.MMApp.useMachine(machine, note, tests);
+      run();
+      $('player').scrollIntoView({ behavior: 'smooth' });
+    },
+  };
 
   /* ================= Start: a shared link, otherwise Example 1 ================= */
   if (location.hash.startsWith(HASH)) {

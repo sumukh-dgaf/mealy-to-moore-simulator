@@ -8,7 +8,9 @@ The simulator takes a user-defined Mealy machine M = (Q, Σ, Δ, δ, λ, q0), wh
 
 **Equivalence convention.** On an input of length n, the Moore machine prints n + 1 symbols: the first is λ′(q0′), printed before any input is read. The Mealy machine prints n symbols. The machines are equivalent if and only if, for every input, the Moore output with its first symbol dropped equals the Mealy output.
 
-The simulator runs entirely in the browser (plain HTML, CSS and JavaScript, with no libraries and no server). The same algorithm files also run in Node.js for the automated tests and a console version.
+It can also **solve from a question**: paste a Mealy → Moore exam question in any wording (or a photo of it), and Google Gemini reads it and proposes the Mealy machine. You check that machine (table, diagram, the AI's assumptions and a self-check against the question's own examples), then the simulator's own deterministic code converts it and explains the answer in words. The AI never converts anything.
+
+The simulator runs entirely in the browser (plain HTML, CSS and JavaScript, with no libraries and no server). Only *Solve from a question* needs internet and a free API key; everything else works offline. The same algorithm files also run in Node.js for the automated tests and a console version.
 
 ## Supported features
 
@@ -28,6 +30,8 @@ Each feature is covered by at least one documented test. The IDs refer to `TestC
 12. **Project design tab** with the Milestone-1 design summary. (UI-16)
 13. **Works offline** by double-clicking `index.html`; the layout has no sideways scrolling at 1200–1366 px. (UI-17, UI-14)
 14. **Console front-end** (`src/cli.js`) for reproducible text output. (TC-26)
+15. **Solve from a question** (AI; needs internet and a free Gemini API key). Paste a question in any wording or add a photo of it (PNG/JPEG/WebP, up to 14 MB), or try one of 4 example questions. Gemini returns the Mealy machine as structured JSON. The panel shows *Understood as*: the transition table, the state diagram, the start state, what each state means, the AI's assumptions (highlighted), anything the question does not give (as errors), and a **self-check** that runs the AI's test cases from the question on the machine (✓/✗). Then: *Use this machine* (into the editor, to fix any cell), *Convert to Moore* (the normal flow), or *Ask again*. If the model is overloaded (HTTP 503) or does not answer within 60 seconds, the panel tries the other Flash model once (`gemini-3.6-flash` ↔ `gemini-3.8-flash`) and says which model answered, e.g. "Answered by gemini-3.6-flash". (TC-27 … TC-31, TC-34 … TC-36, UI-19 … UI-22, UI-25 … UI-31)
+16. **Explanation in words**: after every conversion, the steps are narrated in full sentences, generated from the step log (no AI, so it always matches the result), ending with one sentence per Moore state. Moore state names can be shown as `[A,0]` or textbook-style `A0` (`A_0` when the Mealy name ends in a digit); *Copy answer* copies the explanation and the final Moore table as plain text. (TC-32, TC-33, UI-23, UI-24)
 
 ## Technology stack and dependencies
 
@@ -38,8 +42,11 @@ Each feature is covered by at least one documented test. The IDs refer to `TestC
 | Node.js | v24.21.0 (Node.js 20 or newer is required for the built-in test runner) | the automated tests and the console version only. Uses only built-in modules (`node:test`, `node:assert`, `node:fs`, `node:child_process`); **no npm packages**. |
 | Python | 3.10.11 (any Python 3) | optional: serving the folder with `python -m http.server` |
 | Playwright | 1.63.0 | optional, developer only: `tests/ui-check.js` (scripted UI checks and screenshots). It is **not** a dependency of the project and is not included. |
+| Google Gemini API (external service) | `generateContent` REST endpoint, `v1beta`; default model id **`gemini-3.6-flash`**, automatic one-time fallback to `gemini-3.8-flash` (changeable in the *Model id* setting); lowest thinking level the docs allow, set with `generationConfig.thinkingConfig.thinkingLevel` (`MINIMAL` on 3.6-flash, `LOW` on 3.8-flash) | only *Solve from a question*. Called directly from the browser with `fetch` (no SDK); the key is sent only in the `x-goog-api-key` header. Needs internet and a free API key. |
 
-**Licensing and attribution.** All code was written for this project. It contains no third-party code and loads nothing from the internet. The page layout, the visual style and the layered SVG diagram layout (`src/ui/graph.js`, `src/ui/style.css`) were adapted from another CSET302 project, the *DFA Minimization Simulator* (simulator topic 3), whose team includes Sumukh Gupta and which he supplied as a design reference. Playwright (Apache-2.0 licence) was used only to take screenshots and run UI checks.
+**Data use.** On the free tier, Google may use what you send to improve its products. Do not paste private data into *Solve from a question*.
+
+**Licensing and attribution.** All code was written for this project. It contains no third-party code. Only *Solve from a question* contacts the internet (the Gemini API, used under Google's terms for the Gemini API). The page layout, the visual style and the layered SVG diagram layout (`src/ui/graph.js`, `src/ui/style.css`) were adapted from another CSET302 project, the *DFA Minimization Simulator* (simulator topic 3), whose team includes Sumukh Gupta and which Sumukh Gupta supplied as a design reference. Playwright (Apache-2.0 licence) was used only to take screenshots and run UI checks.
 
 ## Installation
 
@@ -48,7 +55,7 @@ Each feature is covered by at least one documented test. The IDs refer to `TestC
    ```
    node --version
    ```
-3. Optional, to serve the page: check that Python 3 is installed:
+3. Check that Python 3 is installed (it serves the page; see How to run):
    ```
    python --version
    ```
@@ -57,24 +64,46 @@ Each feature is covered by at least one documented test. The IDs refer to `TestC
    cd SourceCode
    ```
 5. There is nothing to install with npm: the project has no dependencies.
+6. Optional, only for *Solve from a question*: get a free Gemini API key. Sign in at <https://aistudio.google.com/apikey> with a Google account, choose **Create API key**, and copy it. Open the simulator at <http://localhost:8000/> (see How to run) and paste the key once into **Gemini API key** in the *Solve from a question* panel. **Remember on this device** is ticked by default, so the key is saved in this browser and is filled in automatically next time; the panel then shows *Gemini key saved on this device ✓* instead of the key field. See *API key handling* below.
 
 ## How to run
 
 The entry point is **`index.html`**.
 
-- **Option A (no server):** double-click `index.html`, or open it with File → Open in the browser. It works offline from `file://`.
-- **Option B (local server):** in the `SourceCode` folder run
-  ```
-  python -m http.server 8000
-  ```
-  and open <http://localhost:8000/>.
+**Always open the simulator the same way:** in the `SourceCode` folder run
+```
+python -m http.server 8000
+```
+and open <http://localhost:8000/>. The browser keeps the saved Gemini key per browser and per address, so opening the same address in the same browser finds the key every time. A different address (`http://127.0.0.1:8000`, another port, or `index.html` opened as a file) or a different browser is a separate place: the key has to be pasted there again.
+
+- **Without a server:** double-click `index.html` (or File → Open). Everything works offline from `file://`, including *Solve from a question*, but a key saved at <http://localhost:8000/> is not seen there.
 - **Console version:** in the `SourceCode` folder run
   ```
   node src/cli.js ex1 0111
   ```
   The first argument is a built-in example (`ex1`, `ex2`) or a path to a JSON or table-text file. The other arguments are input strings; `ε` means the empty string.
 
-In the browser, Example 1 loads automatically. Press **Convert to Moore** after any change, then step through with **Next ▶** or **▶ Play**.
+In the browser, Example 1 loads automatically. Press **Convert to Moore** after any change, then step through with **Next ▶** or **▶ Play**. The *Explanation in words* below the step player narrates the result.
+
+**Solve from a question** (needs internet and a key, see Installation step 6): the panel is open at the top of the page with the cursor in the question box. Type or paste the question (or click an example, or add a photo), press **Read the question**, check *Understood as* and the self-check, then press **Convert to Moore**. A reply usually takes 15–30 seconds. The API calls work the same from `http://localhost:8000` and from `index.html` opened as a file (both were tested live).
+
+**API key handling.**
+
+- While **Remember on this device** is ticked (the default), the key is saved in this browser's `localStorage` under the single name `mm.geminiKey`. Untick it to keep the key only until the page is closed.
+- On the next visit from the same address, the key is filled in automatically and the panel shows *Gemini key saved on this device ✓* with a **Change key** link. When no key is saved, the panel shows "Paste your free key from aistudio.google.com once; it stays on this computer."
+- **Forget key** deletes the saved key from the browser and from the page.
+- The key is sent only in the `x-goog-api-key` request header. It is never written to a project file, a URL, the share link, an export, the copied answer, a log or the console, and it is not in this repository or in `MealyToMoore_Milestone2/`. There is no config file for it.
+
+**Why `gemini-3.6-flash` is the default.** On 22 Nov 2026 each free-tier Flash model was asked the 4 example questions plus one exam-style table question, with the simulator's own request and self-check:
+
+| Model (thinking level) | Self-checks passed | Time per call |
+|---|---|---|
+| `gemini-3.6-flash` (MINIMAL) | **5 / 5** | 21.2, 23.9, 23.8, 21.7, 27.1 s (mean 23.5 s) |
+| `gemini-3.8-flash` (LOW) | 0 / 5 | 4 × HTTP 503 "high demand", 1 × no reply in 120 s |
+| `gemini-3.5-flash-lite` (MINIMAL) | 2 / 5 | mean 4.4 s; 2 × HTTP 503, one wrong machine |
+| `gemini-3.1-flash-lite` (MINIMAL) | 1 / 5 | mean 2.6 s; 3 × wrongly read as a Moore question, one wrong machine |
+
+`gemini-3.6-flash` was the fastest model that passed all 5 self-checks. The Flash-Lite models are faster but read questions wrongly, and `gemini-2.5-flash-lite` is open only to existing users, so it was not tried. Enter another id in **Model id** to switch.
 
 ## Example
 
@@ -123,9 +152,13 @@ SourceCode/
 │   │   ├── parser.js          parse + validate table text / JSON; export to table text / JSON
 │   │   ├── mealyToMoore.js    Algorithm A: state splitting, with a step log (A1–A6, BOUND)
 │   │   ├── simulate.js        run both machines, compare outputs, random strings
-│   │   └── equivalence.js     Algorithm C: BFS equivalence check, shortest counterexample
+│   │   ├── equivalence.js     Algorithm C: BFS equivalence check, shortest counterexample
+│   │   ├── questionSchema.js  Solve from a question: response schema, system instruction, request body,
+│   │   │                      reading the reply, normalising + validating it, self-check (no DOM, no network)
+│   │   └── explain.js         Explanation in words and [A,0] / A0 state names, from the step log
 │   ├── ui/
-│   │   ├── app.js             controller: editor, step player, tester, checker, exports, share link
+│   │   ├── app.js             controller: editor, step player, tester, checker, exports, share link, explanation
+│   │   ├── solve.js           Solve from a question panel: API key, Gemini fetch call, "Understood as" preview
 │   │   ├── render.js          HTML for tables, output alignment, equivalence result
 │   │   ├── graph.js           SVG state-diagram renderer and SVG export
 │   │   └── style.css          layout and dark theme
@@ -135,6 +168,7 @@ SourceCode/
 │   ├── core.test.js           automated test suite (node --test)
 │   ├── fixtures.js            loads test machines; seeded random machines
 │   ├── machines/*.json        hand-worked test machines
+│   ├── fixtures/ai/*.json     hand-written model replies (response-schema format) for the AI tests
 │   ├── ui-check.js            scripted UI checks + screenshots (needs Playwright; optional)
 │   ├── make-test-table.js     builds TestCases/test_cases.md from a test run
 │   └── benchmark.js           performance measurements
@@ -153,16 +187,16 @@ Run the automated tests in the `SourceCode` folder:
 node --test
 ```
 
-(`npm test` does the same.) The suite runs 26 tests (43 checks) and finishes in well under a second.
+(`npm test` does the same.) The suite runs 36 tests (58 checks) and finishes in well under a second. It makes **no network calls**: *Solve from a question* is tested with hand-written model replies (`tests/fixtures/ai/`), and the scripted UI checks replace the Gemini API with a mock.
 
-- **Test data:** the two examples in `examples/presets.js`, the hand-worked machines in `tests/machines/*.json` (also copied to `TestCases/` as JSON), and seeded random machines from `tests/fixtures.js`.
+- **Test data:** the two examples in `examples/presets.js`, the hand-worked machines in `tests/machines/*.json` (also copied to `TestCases/` as JSON), seeded random machines from `tests/fixtures.js`, and the model replies in `tests/fixtures/ai/*.json`.
 - **Reading the result:** every test prints `✔` (pass) or `✖` (fail) with its ID, followed by a line `ℹ TC-xx observed: …` with the value the program produced. The summary at the end shows `ℹ pass` and `ℹ fail`. The expected value of every check, and where it comes from (a hand-worked trace, the design document, a validation rule), is in `TestCases/test_cases.md`.
 - **Rebuilding the test table** (PowerShell; in bash use `TEST_RESULTS=results.json node --test`):
   ```
   $env:TEST_RESULTS = "results.json"; node --test
   node tests/make-test-table.js results.json | Out-File -Encoding utf8 test_cases.md
   ```
-- **Scripted UI checks and screenshots** (optional; needs Playwright, which is not part of the project): start `python -m http.server 8000`, then
+- **Scripted UI checks and screenshots** (optional; needs Playwright, which is not part of the project; 32 checks, the Gemini API is mocked; takes about 2½ minutes because one check waits for the 60-second timeout on both models): start `python -m http.server 8000`, then
   ```
   $env:PLAYWRIGHT = "<folder containing node_modules/playwright>"; node tests/ui-check.js http://localhost:8000/ screenshots
   ```
@@ -179,6 +213,8 @@ node --test
 - The diagram uses a simple layered layout. Machines with more than about 15 Moore states are drawn at a fixed minimum size and scroll, and edges may still cross.
 - The step-log text for step A1 lists every entering transition, which costs O(|Q|²·|Σ|). Conversion stays under 0.2 s up to 1,000 Mealy states (see `docs/evidence/benchmark.txt`).
 - A share link stores the Mealy machine only. The options (default output, start copy, pruning) reset to their defaults.
+- *Solve from a question*: the AI can misread a question or design a wrong machine. That is why the panel shows *Understood as*, the assumptions, the missing information and the self-check before anything is converted, and why you can edit the machine. The conversion and the equivalence check are always this project's deterministic code. The feature needs internet. A reply takes 15–30 seconds. The timeout is 60 seconds per model; it was raised from 30 seconds after one of 7 live questions timed out on both models at 30 seconds. The free tier has rate limits: about 20 requests per day per model were observed (HTTP 429 after that, until the daily reset). The automated tests make no live call: they use hand-written replies and a mocked API.
+- *Saved API key*: the key is stored unencrypted in the browser profile. Anyone who uses this browser profile, and any other page served from the same address (for example another project served at `http://localhost:8000`), can read it. Press **Forget key** before lending the computer, and use a free-tier key with no billing attached. The key is saved per browser and per address, so it must be pasted again in another browser or at another address.
 
 **Troubleshooting**
 
@@ -188,6 +224,12 @@ node --test
 - *`python -m http.server` fails with "address already in use":* use another port, e.g. `python -m http.server 8080`, and open that port.
 - *`node` is not recognised:* install Node.js (step 2 of Installation) and open a new terminal.
 - *Tests fail to start:* check `node --version`; Node.js 20 or newer is required.
+- *Solve from a question says "Could not reach the Gemini API":* check the internet connection; a firewall or proxy may block `generativelanguage.googleapis.com`. Everything else still works offline.
+- *"The API key was not accepted":* press **Change key** (or **Forget key**) and paste the whole key again from <https://aistudio.google.com/apikey>.
+- *The saved key is not found / the key field appears again:* the page was opened at a different address or in a different browser. Open <http://localhost:8000/> in the same browser as before (see How to run).
+- *"free-tier limit was reached (429)":* wait a minute and try again. If it says the daily quota is used up, wait for the daily reset, or enter the other model id (`gemini-3.8-flash` or `gemini-3.6-flash`) in **Model id**: each model has its own quota.
+- *"… is overloaded right now (503: high demand)" or "did not answer within 60 seconds":* the panel already tried the other model once. Wait a few minutes and press **Read the question** again.
+- *"The model … was not found":* Google renamed or retired the model; enter the current Flash model id from <https://aistudio.google.com/docs/models> in **Model id**.
 
 ## Team contributions and acknowledgements
 

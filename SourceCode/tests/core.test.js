@@ -20,6 +20,10 @@ const { compareOnWord, randomWords, toSymbols } = require('../src/core/simulate.
 const { checkEquivalence } = require('../src/core/equivalence.js');
 const { showWord } = require('../src/core/model.js');
 const { FILES, spec, load, lcg, randomMealy } = require('./fixtures.js');
+const Q = require('../src/core/questionSchema.js');
+const { mooreDisplayNames, explainConversion, answerText } = require('../src/core/explain.js');
+// Hand-written model replies in the RESPONSE_SCHEMA shape (tests/fixtures/ai/README.md); no live API calls.
+const aiReply = (name) => JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'ai', `${name}.json`), 'utf8'));
 
 const results = [];
 after(() => {
@@ -412,4 +416,135 @@ test('TC-21 a 50-state, 5-symbol machine converts and verifies in under 100 ms',
     input: 'convert + Algorithm C, median of 5 runs', expected: 'under 100 ms and equivalent',
     actual: median < 100 && eq.equivalent ? 'under 100 ms and equivalent' : `${median.toFixed(1)} ms, equivalent: ${eq.equivalent}`,
     detail: `median ${median.toFixed(2)} ms; |Q′| = ${res.machine.states.length}; ${eq.pairsExplored} pairs` });
+});
+
+// ===================== Solve from a question (AI step) and Explanation in words =====================
+
+const AI = 'tests/fixtures/ai/';
+
+test('TC-27 a model reply for Example 1 normalises to exactly the Example 1 machine', (t) => {
+  const r = Q.normaliseReply(aiReply('ex1_valid'));
+  check(t, { id: 'TC-27', category: 'Normal', feature: 'Solve from a question: normalise the model reply', machine: `${AI}ex1_valid.json`,
+    input: 'normaliseReply', expected: 'no errors; identical to ex1_11detector.json',
+    actual: `${r.errors.length ? r.errors.join(' | ') : 'no errors'}; ${JSON.stringify(r.machine) === JSON.stringify(load('ex1')) ? 'identical to ex1_11detector.json' : 'DIFFERENT'}` });
+});
+
+test('TC-28 "missing" items are errors and nothing is converted', (t) => {
+  const r = Q.normaliseReply(aiReply('missing'));
+  check(t, { id: 'TC-28', category: 'Invalid input', feature: 'Solve from a question: missing information', machine: `${AI}missing.json`,
+    input: 'normaliseReply', expected: 'The question does not say where B goes on input 1. | Missing transition: δ(B, 1) is not defined (machine must be complete); not converted',
+    actual: `${r.errors.join(' | ')}; ${r.machine === null ? 'not converted' : 'CONVERTED'}` });
+});
+
+test('TC-29 non-deterministic or incomplete replies get the existing validation errors', (t) => {
+  check(t, { id: 'TC-29a', category: 'Invalid input', feature: 'Solve from a question: validation', machine: `${AI}nondeterministic.json`, input: 'normaliseReply',
+    expected: 'Duplicate transition: δ(A, 0) is defined more than once (machine must be deterministic)', actual: Q.normaliseReply(aiReply('nondeterministic')).errors.join(' | ') });
+  check(t, { id: 'TC-29b', category: 'Invalid input', feature: 'Solve from a question: validation', machine: `${AI}incomplete.json`, input: 'normaliseReply',
+    expected: 'Missing transition: δ(B, 1) is not defined (machine must be complete)', actual: Q.normaliseReply(aiReply('incomplete')).errors.join(' | ') });
+  const junk = Q.normaliseReply('not an object');
+  check(t, { id: 'TC-29c', category: 'Invalid input', feature: 'Solve from a question: validation', machine: 'reply = "not an object"', input: 'normaliseReply',
+    expected: 'The reply is not a JSON object.; not converted', actual: `${junk.errors[0]}; ${junk.machine === null ? 'not converted' : 'CONVERTED'}` });
+});
+
+test('TC-30 the self-check runs the test cases of the reply and flags a mismatch', (t) => {
+  const show = (name) => {
+    const r = Q.normaliseReply(aiReply(name));
+    return Q.selfCheck(r.machine, r.info.testCases).map((c) => `${c.input || 'ε'}→${c.actual} ${c.ok ? '✓' : '✗'}`).join(', ');
+  };
+  check(t, { id: 'TC-30a', category: 'Mathematical correctness', feature: 'Solve from a question: self-check', machine: `${AI}q1_sentences.json`, input: '5 test cases from the reply',
+    expected: '0111→0011 ✓, 11→01 ✓, 1011→0001 ✓, 110→010 ✓, ε→ε ✓', actual: show('q1_sentences') });
+  check(t, { id: 'TC-30b', category: 'Mathematical correctness', feature: 'Solve from a question: self-check', machine: `${AI}wrong_testcase.json`, input: 'test case 111 expects 000',
+    expected: '0111→0011 ✓, 111→011 ✗', actual: show('wrong_testcase') });
+});
+
+test('TC-31 reading the API response: JSON, blocked, invalid', (t) => {
+  const wrap = (text, extra = {}) => ({ candidates: [{ content: { parts: [{ text }] }, finishReason: 'STOP', ...extra }] });
+  const kind = (r) => Object.keys(r)[0];
+  check(t, { id: 'TC-31', category: 'Invalid input', feature: 'Solve from a question: API response handling', machine: 'generateContent responses',
+    input: 'valid JSON | promptFeedback.blockReason | finishReason SAFETY | not JSON | no candidates',
+    expected: 'reply | blocked | blocked | invalid | invalid',
+    actual: [Q.readResponse(wrap(JSON.stringify(aiReply('ex1_valid')))), Q.readResponse({ promptFeedback: { blockReason: 'SAFETY' } }),
+      Q.readResponse(wrap('', { finishReason: 'SAFETY' })), Q.readResponse(wrap('Sure! Here is the machine:')), Q.readResponse({})].map(kind).join(' | ') });
+});
+
+test('TC-32 the explanation in words matches the conversion, in both name styles', (t) => {
+  const mealy = load('ex1');
+  const conv = mealyToMoore(mealy);
+  const text = (style) => explainConversion(mealy, conv, mooreDisplayNames(conv, mealy, style).names).flatMap((s) => s.sentences).join(' ');
+  const SENTENCE = 'The Mealy machine starts at q0, which corresponds to [q0,0] (output 0) in the Moore machine.';
+  check(t, { id: 'TC-32a', category: 'Normal', feature: 'Explanation in words', machine: FILES.ex1, input: 'names [A,0]',
+    expected: `contains "${SENTENCE}"`, actual: text('bracket').includes(SENTENCE) ? `contains "${SENTENCE}"` : text('bracket') });
+  check(t, { id: 'TC-32b', category: 'Normal', feature: 'Explanation in words', machine: FILES.ex1, input: 'names A0 (textbook)',
+    expected: 'contains q0_0, q1_0, q1_1; no [q',
+    actual: `${['q0_0', 'q1_0', 'q1_1'].every((n) => text('textbook').includes(n)) ? 'contains q0_0, q1_0, q1_1' : 'MISSING names'}; ${text('textbook').includes('[q') ? 'has [q' : 'no [q'}` });
+  const ex2 = load('ex2');
+  const c2 = mealyToMoore(ex2);
+  const s2 = explainConversion(ex2, c2, mooreDisplayNames(c2, ex2, 'textbook').names).flatMap((s) => s.sentences);
+  check(t, { id: 'TC-32c', category: 'Normal', feature: 'Explanation in words', machine: FILES.ex2, input: 'names A0 (textbook)',
+    expected: 's has no incoming transitions, so it becomes s– with the default output x. | States rz and dz can never be reached from the start state, so they are removed.',
+    actual: [s2.find((s) => s.startsWith('s has')), s2.find((s) => s.includes('never be reached'))].join(' | ') });
+});
+
+test('TC-33 Moore state names are unique in both styles for every test machine', (t) => {
+  const mealyNames = Object.keys(FILES).filter((n) => spec(n).type === 'mealy');
+  const machines = [...mealyNames.map((n) => load(n)), ...Array.from({ length: 50 }, (_, i) => parseMachine(randomMealy(1 + (i % 7), 2, 3, 100 + i)).machine)];
+  // a machine whose textbook names would collide: [A,_1] and [A_,1] both read "A_1"
+  const collide = parseMachine('type: mealy\nstart: A\noutputs: _1 1\nstate | x | y\nA | A/_1 | A_/1\nA_ | A/_1 | A_/1').machine;
+  let ok = 0;
+  for (const m of [...machines, collide]) {
+    const conv = mealyToMoore(m);
+    const unique = (st) => { const v = Object.values(mooreDisplayNames(conv, m, st).names); return new Set(v).size === v.length; };
+    if (unique('bracket') && unique('textbook')) ok++;
+  }
+  const fb = mooreDisplayNames(mealyToMoore(collide), collide, 'textbook');
+  check(t, { id: 'TC-33', category: 'Boundary', feature: 'Moore state names ([A,0] / A0)', machine: `${mealyNames.length} test machines, 50 random machines, 1 colliding machine`,
+    input: 'mooreDisplayNames in both styles', expected: `${machines.length + 1}/${machines.length + 1} unique; colliding machine falls back to [A,0] names`,
+    actual: `${ok}/${machines.length + 1} unique; colliding machine ${fb.fellBack && fb.style === 'bracket' ? 'falls back to [A,0] names' : 'DID NOT fall back'}` });
+});
+
+test('TC-34 the API key never appears in the request body, URL, exports, share-link text or explanation', (t) => {
+  const key = 'AIza-TEST-KEY-not-real-0123456789';
+  const r = Q.normaliseReply(aiReply('q1_sentences'));
+  const conv = mealyToMoore(r.machine);
+  const places = {
+    'request body': JSON.stringify(Q.buildRequestBody('question', { mimeType: 'image/png', data: 'AAAA' })),
+    'endpoint URL': Q.endpointUrl(Q.DEFAULT_MODEL),
+    'Moore JSON export': JSON.stringify(toSpec(conv.machine)),
+    'table-text export / share link': toTableText(conv.machine) + toTableText(r.machine),
+    explanation: answerText(r.machine, conv),
+  };
+  const src = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
+  const solveSrc = src('src/ui/solve.js');
+  const leaks = Object.entries(places).filter(([, s]) => s.includes(key) || /[?&]key=/.test(s)).map(([k]) => k);
+  // code use only (the header comment names these places on purpose)
+  const risky = [['sessionStorage', /\bsessionStorage\s*[.[]/], ['?key=', /[?&]key=/], ['console.', /\bconsole\.\w/]].filter(([, re]) => re.test(solveSrc)).map(([name]) => name);
+  // localStorage: every use in solve.js names the one slot KEY_SLOT = 'mm.geminiKey'; no other file uses storage
+  const uses = [...solveSrc.matchAll(/\blocalStorage\.(\w+)\(([^,)]*)/g)].map((m) => m[2].trim());
+  const slot = (solveSrc.match(/const KEY_SLOT = '([^']+)'/) || [])[1];
+  const others = ['index.html', 'src/ui/app.js', 'src/ui/render.js', 'src/ui/graph.js', 'src/core/explain.js', 'src/core/parser.js', 'src/core/questionSchema.js']
+    .filter((p) => /\b(localStorage|sessionStorage)\b|mm\.geminiKey/.test(src(p)));
+  const storage = uses.length && uses.every((u) => u === 'KEY_SLOT') && slot === 'mm.geminiKey' && !others.length
+    ? 'localStorage only under mm.geminiKey, only in solve.js' : `localStorage uses: ${uses.join(', ')}; slot ${slot}; also in ${others.join(', ')}`;
+  check(t, { id: 'TC-34', category: 'Invalid input', feature: 'Solve from a question: API key handling', machine: `${AI}q1_sentences.json`,
+    input: 'scan request, URL, exports, explanation; scan solve.js for sessionStorage, ?key=, console.; scan src/ for storage use',
+    expected: 'no key anywhere; solve.js uses none of them; localStorage only under mm.geminiKey, only in solve.js; key sent only as x-goog-api-key header',
+    actual: `${leaks.length ? 'key in: ' + leaks.join(', ') : 'no key anywhere'}; ${risky.length ? 'solve.js uses ' + risky.join(', ') : 'solve.js uses none of them'}; ${storage}; ` +
+      `key sent only as ${solveSrc.includes("'x-goog-api-key': apiKey") ? 'x-goog-api-key header' : 'UNKNOWN'}` });
+});
+
+test('TC-35 the request asks for JSON with the response schema and can carry an inline image', (t) => {
+  const body = Q.buildRequestBody('Convert …', { mimeType: 'image/jpeg', data: 'BASE64' });
+  const g = body.generationConfig;
+  check(t, { id: 'TC-35', category: 'Normal', feature: 'Solve from a question: request format', machine: '—', input: 'question + JPEG photo',
+    expected: `application/json; schema requires ${Q.RESPONSE_SCHEMA.required.length} fields; parts text + image/jpeg; model ${Q.DEFAULT_MODEL}`,
+    actual: `${g.responseMimeType}; schema requires ${g.responseJsonSchema.required.length} fields; parts ${body.contents[0].parts.map((p) => (p.text ? 'text' : p.inlineData.mimeType)).join(' + ')}; model ${Q.endpointUrl(Q.DEFAULT_MODEL).match(/models\/(.+):/)[1]}` });
+  assert.throws(() => Q.endpointUrl('bad model/../x'), /not a valid model id/);
+});
+
+test('TC-36 lowest thinking level per model, and the 3.6-flash ↔ 3.8-flash fallback pair', (t) => {
+  const level = (m) => (Q.buildRequestBody('q', null, m).generationConfig.thinkingConfig || { thinkingLevel: 'none' }).thinkingLevel;
+  const models = ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'some-other-model'];
+  check(t, { id: 'TC-36', category: 'Normal', feature: 'Solve from a question: thinking level and model fallback', machine: '—', input: models.join(', '),
+    expected: 'default gemini-3.6-flash | thinking MINIMAL, LOW, MINIMAL, MINIMAL, none | fallback gemini-3.8-flash, gemini-3.6-flash, none, none, none',
+    actual: `default ${Q.DEFAULT_MODEL} | thinking ${models.map(level).join(', ')} | fallback ${models.map((m) => Q.fallbackModel(m) || 'none').join(', ')}` });
 });

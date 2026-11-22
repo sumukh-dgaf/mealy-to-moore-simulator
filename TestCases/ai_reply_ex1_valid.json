@@ -1,0 +1,76 @@
+{
+  "kind": "given_machine",
+  "states": [
+    "q0",
+    "q1"
+  ],
+  "inputs": [
+    "0",
+    "1"
+  ],
+  "outputs": [
+    "0",
+    "1"
+  ],
+  "start": "q0",
+  "transitions": [
+    {
+      "from": "q0",
+      "input": "0",
+      "to": "q0",
+      "output": "0"
+    },
+    {
+      "from": "q0",
+      "input": "1",
+      "to": "q1",
+      "output": "0"
+    },
+    {
+      "from": "q1",
+      "input": "0",
+      "to": "q0",
+      "output": "0"
+    },
+    {
+      "from": "q1",
+      "input": "1",
+      "to": "q1",
+      "output": "1"
+    }
+  ],
+  "state_meanings": [
+    {
+      "state": "q0",
+      "meaning": "the last input was not 1"
+    },
+    {
+      "state": "q1",
+      "meaning": "the last input was 1"
+    }
+  ],
+  "assumptions": [],
+  "missing": [],
+  "test_cases": [
+    {
+      "input": "0111",
+      "expected_output": "0011",
+      "reason": "output 1 when the last two inputs are 11"
+    },
+    {
+      "input": "11",
+      "expected_output": "01",
+      "reason": "second 1"
+    },
+    {
+      "input": "10",
+      "expected_output": "00",
+      "reason": "no 11"
+    },
+    {
+      "input": "",
+      "expected_output": "",
+      "reason": "empty input"
+    }
+  ]
+}

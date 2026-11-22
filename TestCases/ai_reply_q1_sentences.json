@@ -1,0 +1,81 @@
+{
+  "kind": "given_machine",
+  "states": [
+    "A",
+    "B"
+  ],
+  "inputs": [
+    "0",
+    "1"
+  ],
+  "outputs": [
+    "0",
+    "1"
+  ],
+  "start": "A",
+  "transitions": [
+    {
+      "from": "A",
+      "input": "0",
+      "to": "A",
+      "output": "0"
+    },
+    {
+      "from": "A",
+      "input": "1",
+      "to": "B",
+      "output": "0"
+    },
+    {
+      "from": "B",
+      "input": "0",
+      "to": "A",
+      "output": "0"
+    },
+    {
+      "from": "B",
+      "input": "1",
+      "to": "B",
+      "output": "1"
+    }
+  ],
+  "state_meanings": [
+    {
+      "state": "A",
+      "meaning": "the last input was not 1 (or nothing has been read)"
+    },
+    {
+      "state": "B",
+      "meaning": "the last input was 1"
+    }
+  ],
+  "assumptions": [],
+  "missing": [],
+  "test_cases": [
+    {
+      "input": "0111",
+      "expected_output": "0011",
+      "reason": "two 1s in a row first give output 1 on the second 1"
+    },
+    {
+      "input": "11",
+      "expected_output": "01",
+      "reason": "B on input 1 outputs 1"
+    },
+    {
+      "input": "1011",
+      "expected_output": "0001",
+      "reason": "a 0 sends the machine back to A"
+    },
+    {
+      "input": "110",
+      "expected_output": "010",
+      "reason": "B on input 0 outputs 0 and returns to A"
+    },
+    {
+      "input": "",
+      "expected_output": "",
+      "reason": "the empty input gives no Mealy output"
+    }
+  ]
+}

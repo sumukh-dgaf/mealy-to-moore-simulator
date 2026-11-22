@@ -37,7 +37,8 @@ function check(rec) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  // the mocked Gemini errors (429, aborted request) are expected browser network messages, not app errors
+  page.on('console', (m) => m.type() === 'error' && !(m.location().url || '').includes('generativelanguage.googleapis.com') && errors.push(m.text()));
   const text = async (sel) => (await page.textContent(sel)).replace(/\s+/g, ' ').trim();
   const phase = async (name) => page.click(`#timeline button[title="Jump to ${name}"]`);
   // open the import panel (clicking its summary would toggle it closed again)
@@ -51,6 +52,17 @@ function check(rec) {
     expected: 'Example 1 converted: 2 → 3 states, ✓ equivalent; no console errors',
     actual: `Example 1 converted: ${(await text('.stat.hero b'))} states, ${(await text('.stat.ok b')) || '?'} equivalent; ${errors.length ? 'errors: ' + errors.join('; ') : 'no console errors'}`,
     evidence: 'Screenshot 01' });
+  const first = await page.evaluate(() => ({
+    open: document.getElementById('solver').open, focus: document.activeElement && document.activeElement.id,
+    chip: !document.getElementById('aiSaved').hidden, field: !document.getElementById('aiKeyEntry').hidden,
+    ticked: document.getElementById('aiRemember').checked, hint: document.getElementById('aiKeyHint').hidden ? '' : document.getElementById('aiKeyHint').textContent.trim(),
+  }));
+  check({ id: 'UI-31', feature: 'Solve from a question: open by default, no key saved yet', input: `first visit to ${base}`,
+    expected: 'panel open; cursor in the question box; key field shown, "Remember on this device" ticked; hint: Paste your free key from aistudio.google.com once; it stays on this computer.',
+    actual: `panel ${first.open ? 'open' : 'closed'}; cursor in ${first.focus === 'aiQuestion' ? 'the question box' : first.focus || 'nothing'}; ` +
+      `key field ${first.field && !first.chip ? 'shown' : 'NOT shown'}, "Remember on this device" ${first.ticked ? 'ticked' : 'not ticked'}; hint: ${first.hint}`, evidence: 'test log' });
+  // the classic screenshots show the simulator itself; the panel has its own screenshots (16, 17)
+  await page.evaluate(() => { document.getElementById('solver').open = false; window.scrollTo(0, 0); });
   await page.screenshot({ animations: 'disabled', path: shot('01_editor_example1.png') });
 
   // UI-02 step player: Next, Prev, timeline jump, step list
@@ -209,6 +221,181 @@ function check(rec) {
     expected: 'minimum width set; stage scrolls', actual: `${large.minWidth ? 'minimum width set' : 'no minimum width'}; ${large.scrolls ? 'stage scrolls' : 'no scroll'}`,
     detail: `${large.states} Moore states drawn, min-width ${large.minWidth}`, evidence: 'Screenshot 14' });
   await (await page.$('#player')).screenshot({ animations: 'disabled', path: shot('14_larger_machine_diagram.png') });
+
+  // ---------- Solve from a question: MOCKED Gemini API (Playwright route interception, no real network) ----------
+  const FAKE_KEY = 'test-key-not-real-0000';
+  const fixture = (name) => JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'ai', `${name}.json`), 'utf8'));
+  const geminiOk = (reply) => ({ status: 200, body: { candidates: [{ content: { role: 'model', parts: [{ text: typeof reply === 'string' ? reply : JSON.stringify(reply) }] }, finishReason: 'STOP' }] } });
+  let mock = null; // what the next request gets: {status, body} | 'abort' | 'hang'
+  const calls = [];
+  await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
+    const req = route.request();
+    calls.push({ url: req.url(), key: req.headers()['x-goog-api-key'], body: req.postDataJSON() });
+    const m = typeof mock === 'function' ? mock(req) : mock; // a function answers per model (fallback check)
+    if (m === 'abort') return route.abort('failed');
+    if (m === 'hang') return; // never answered: the page must time out by itself
+    return route.fulfill({ status: m.status, contentType: 'application/json', body: JSON.stringify(m.body) });
+  });
+  const ask = async (timeout = 30000) => { await page.click('#aiAsk'); await page.waitForFunction(() => !document.getElementById('aiAsk').disabled, null, { timeout }); };
+  const aiStatus = () => text('#aiStatus');
+
+  await preset('ex1');
+  await page.evaluate(() => { document.getElementById('solver').open = true; window.scrollTo(0, 0); });
+  await page.fill('#aiKey', '');
+  await page.fill('#aiQuestion', 'anything');
+  await ask();
+  check({ id: 'UI-19', feature: 'Solve from a question: no key', input: 'no API key, "Read the question"',
+    expected: 'Enter a Gemini API key first (free from aistudio.google.com/apikey). Only this panel needs a key and internet. | 0 requests sent',
+    actual: `${await aiStatus()} | ${calls.length} requests sent`, evidence: 'test log' });
+
+  await page.fill('#aiKey', FAKE_KEY);
+  await page.fill('#aiQuestion', '');
+  await ask();
+  check({ id: 'UI-20', feature: 'Solve from a question: empty question', input: 'key, empty question',
+    expected: 'Type or paste the question (or add a photo of it) first.', actual: await aiStatus(), evidence: 'test log' });
+
+  await page.setInputFiles('#aiImage', { name: 'question.png', mimeType: 'image/png', buffer: Buffer.alloc(15 * 1024 * 1024) });
+  check({ id: 'UI-21', feature: 'Solve from a question: photo too large', input: '15 MB PNG',
+    expected: 'The photo is 15.0 MB; the limit is 14 MB (Gemini accepts at most 20 MB per request, and the photo grows by a third when it is sent).',
+    actual: await aiStatus(), evidence: 'test log' });
+
+  // success path: example question 1, mocked reply tests/fixtures/ai/q1_sentences.json
+  await page.click('#aiExamples button[data-q="0"]');
+  await page.screenshot({ animations: 'disabled', path: shot('16_solver_question_panel.png'), clip: await page.locator('#solver').boundingBox() });
+  mock = geminiOk(fixture('q1_sentences'));
+  await ask();
+  const req = calls.at(-1);
+  const checks = await page.locator('#aiPreview tbody td.good').count();
+  check({ id: 'UI-22', feature: 'Solve from a question: "Understood as" preview and self-check (mocked API)', input: 'example question 1 + mocked reply q1_sentences.json',
+    expected: 'The question was read. Check the machine below before converting. Answered by gemini-3.6-flash. | 2 states in table | self-check 5/5 ✓ | key only in x-goog-api-key header; JSON + schema requested',
+    actual: `${await aiStatus()} | ${await page.locator('#aiPreview table.grid').first().locator('tbody tr').count()} states in table | self-check ${checks}/5 ✓ | ` +
+      `${req.key === FAKE_KEY && !req.url.includes('key=') ? 'key only in x-goog-api-key header' : 'KEY IN URL OR MISSING'}; ` +
+      `${req.body.generationConfig.responseMimeType === 'application/json' && req.body.generationConfig.responseJsonSchema && req.body.systemInstruction ? 'JSON + schema requested' : 'NO SCHEMA'}`,
+    evidence: 'Screenshots 16, 17 (mocked API)' });
+  await page.screenshot({ animations: 'disabled', path: shot('17_solver_understood_as_selfcheck.png'), clip: await page.locator('#solver').boundingBox() });
+
+  await page.click('#aiConvert');
+  await page.waitForSelector('#explain:not([hidden])');
+  const SENT = 'The Mealy machine starts at A, which corresponds to [A,0] (output 0) in the Moore machine.';
+  const bracketText = await text('#explainBody');
+  await page.selectOption('#nameStyle', 'textbook');
+  const textbookText = await text('#explainBody');
+  check({ id: 'UI-23', feature: 'Convert from the question + Explanation in words', input: '"Convert to Moore", then names A0',
+    expected: `2 → 3 | contains "${SENT}" | A0 style: A0, B0, B1`,
+    actual: `${await text('.stat.hero b')} | ${bracketText.includes(SENT) ? `contains "${SENT}"` : bracketText.slice(0, 120)} | A0 style: ${['A0', 'B0', 'B1'].filter((n) => textbookText.includes(n)).join(', ')}`,
+    evidence: 'Screenshot 18' });
+  await (await page.$('#explain')).screenshot({ animations: 'disabled', path: shot('18_explanation_in_words.png') });
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(base).origin });
+  await page.click('#copyAnswerBtn');
+  const copied = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+  check({ id: 'UI-24', feature: 'Copy answer', input: '"Copy answer" (A0 names)',
+    expected: 'clipboard: explanation + "Moore transition table" with → A0',
+    actual: `clipboard: ${copied.includes('The Mealy machine starts at A') ? 'explanation' : 'NO explanation'} + ${copied.includes('Moore transition table') && copied.includes('→ A0') ? '"Moore transition table" with → A0' : 'NO table'}`,
+    evidence: 'test log' });
+  await page.selectOption('#nameStyle', 'bracket');
+
+  // wrong reply: one test case does not match the machine
+  await page.evaluate(() => { document.getElementById('solver').open = true; });
+  mock = geminiOk(fixture('wrong_testcase'));
+  await ask();
+  check({ id: 'UI-25', feature: 'Solve from a question: self-check warning', input: 'mocked reply wrong_testcase.json (111 expects 000)',
+    expected: 'The machine does not match the question on these inputs; edit it before converting.', actual: await text('#aiPreview p.msg.warn'), evidence: 'test log' });
+
+  // missing information: errors shown, Convert disabled, "Use this machine" loads the partial machine into the editor
+  mock = geminiOk(fixture('missing'));
+  await ask();
+  const convertDisabled = await page.isDisabled('#aiConvert');
+  await page.click('#aiUse');
+  const cell = await page.inputValue('select[data-s="B"][data-a="1"][data-k="delta"]');
+  check({ id: 'UI-26', feature: 'Solve from a question: missing information', input: 'mocked reply missing.json, then "Use this machine"',
+    expected: 'The question does not say where B goes on input 1. shown | Convert disabled | editor cell δ(B, 1) = —',
+    actual: `${(await text('#aiPreview .msg.error')).includes('The question does not say where B goes on input 1.') ? 'The question does not say where B goes on input 1. shown' : 'NOT shown'} | ` +
+      `${convertDisabled ? 'Convert disabled' : 'Convert ENABLED'} | editor cell δ(B, 1) = ${cell === '' ? '—' : cell}`, evidence: 'test log' });
+
+  // API errors
+  const errorCase = async (m, timeout) => { mock = m; await ask(timeout); return aiStatus(); };
+  const before = calls.length;
+  const r429 = await errorCase({ status: 429, body: { error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'Quota exceeded' } } });
+  const rKey = await errorCase({ status: 400, body: { error: { code: 400, status: 'INVALID_ARGUMENT', message: 'API key not valid. Please pass a valid API key.' } } });
+  const rBlock = await errorCase({ status: 200, body: { promptFeedback: { blockReason: 'SAFETY' } } });
+  const nInvalid = calls.length;
+  const rJson = await errorCase(geminiOk('Sure! Here is the machine.'));
+  const invalidCalls = calls.length - nInvalid;
+  const rNet = await errorCase('abort');
+  const previewCleared = await page.isHidden('#aiPreview');
+  check({ id: 'UI-27', feature: 'Solve from a question: API errors (mocked)', input: '429 | invalid key | safety block | reply not JSON | network failure',
+    expected: '429 quota message | key not accepted | blocked | not valid JSON after 2 requests | could not reach the API | old preview cleared',
+    actual: [r429.includes('429') && r429.includes('free-tier limit') ? '429 quota message' : r429,
+      rKey.startsWith('The API key was not accepted') && !rKey.includes(FAKE_KEY) ? 'key not accepted' : rKey,
+      rBlock.startsWith('Gemini blocked the question') ? 'blocked' : rBlock,
+      rJson.includes('(tried twice)') ? `not valid JSON after ${invalidCalls} requests` : rJson,
+      rNet.startsWith('Could not reach the Gemini API') ? 'could not reach the API' : rNet,
+      previewCleared ? 'old preview cleared' : 'OLD PREVIEW STILL SHOWN'].join(' | '),
+    detail: `${calls.length - before} mocked requests`, evidence: 'test log' });
+  const rTimeout = await errorCase('hang', 150000); // both models time out after 60 s each
+  check({ id: 'UI-28', feature: 'Solve from a question: 60 s timeout, then the other model once (mocked)', input: 'no request is ever answered',
+    expected: 'gemini-3.6-flash did not answer within 60 seconds (timeout). Then gemini-3.8-flash was tried once: gemini-3.8-flash did not answer within 60 seconds (timeout). Try again later.',
+    actual: rTimeout, evidence: 'test log' });
+
+  // gemini-3.6-flash overloaded (503) → one automatic retry with gemini-3.8-flash, which answers
+  const nBefore = calls.length;
+  const busy = { status: 503, body: { error: { code: 503, status: 'UNAVAILABLE', message: 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.' } } };
+  const rFallback = await errorCase((req) => (req.url().includes('gemini-3.6-flash') ? busy : geminiOk(fixture('q1_sentences'))));
+  const tried = calls.slice(nBefore).map((c) => `${c.url.match(/models\/([^:]+):/)[1]} (thinking ${c.body.generationConfig.thinkingConfig.thinkingLevel})`).join(' → ');
+  check({ id: 'UI-30', feature: 'Solve from a question: automatic fallback on 503 (mocked)', input: 'gemini-3.6-flash answers 503 high demand; gemini-3.8-flash answers',
+    expected: 'gemini-3.6-flash (thinking MINIMAL) → gemini-3.8-flash (thinking LOW) | The question was read. Check the machine below before converting. Answered by gemini-3.8-flash.',
+    actual: `${tried} | ${rFallback}`, evidence: 'test log' });
+
+  // key storage: saved on this device (localStorage, one fixed name) only while the box is ticked; restored on
+  // reload; Forget removes it; never in sessionStorage, the share link, the JSON export or the copied answer
+  const storage = () => page.evaluate((k) => ({
+    slot: localStorage.getItem('mm.geminiKey') === k,
+    other: Object.keys(localStorage).some((n) => n !== 'mm.geminiKey' && localStorage.getItem(n).includes(k)),
+    session: Object.keys(sessionStorage).some((n) => sessionStorage.getItem(n).includes(k)),
+  }), FAKE_KEY);
+  const yn = (x) => (x.slot ? 'yes' : 'no');
+  const s1 = await storage(); // the key was typed in UI-20 with the box ticked by default
+  await page.uncheck('#aiRemember');
+  const s2 = await storage();
+  await page.check('#aiRemember');
+  const s3 = await storage();
+  await page.reload();
+  await page.waitForSelector('#player:not([hidden])');
+  const restored = await page.evaluate(() => ({
+    chip: document.getElementById('aiSaved').hidden ? '' : document.getElementById('aiSaved').firstChild.textContent.trim(),
+    field: !document.getElementById('aiKeyEntry').hidden, hint: !document.getElementById('aiKeyHint').hidden,
+    focus: document.activeElement && document.activeElement.id,
+  }));
+  mock = geminiOk(fixture('q1_sentences'));
+  await page.fill('#aiQuestion', 'Convert the machine of example 1.');
+  await ask();
+  const sentWith = calls.at(-1).key === FAKE_KEY ? 'request sent with the saved key' : 'REQUEST WITHOUT THE SAVED KEY';
+  await page.click('#aiChange');
+  const changeShows = await page.isVisible('#aiKey') ? 'Change key shows the field' : 'Change key does NOT show the field';
+  await preset('ex1');
+  await page.click('#linkBtn');
+  const [jsonDl] = await Promise.all([page.waitForEvent('download'), page.click('#jsonBtn')]);
+  const exported = fs.readFileSync(await jsonDl.path(), 'utf8');
+  await page.click('#copyAnswerBtn');
+  const answer = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+  const leak = [['share link', page.url()], ['JSON export', exported], ['copied answer', answer]].filter(([, t]) => t.includes(FAKE_KEY)).map(([n]) => n);
+  await page.click('#aiForget');
+  const s4 = await storage();
+  const afterForget = await page.evaluate(() => ({ field: document.getElementById('aiKey').value, chip: !document.getElementById('aiSaved').hidden }));
+  await page.reload();
+  await page.waitForSelector('#player:not([hidden])');
+  const fresh = await page.evaluate(() => ({ field: document.getElementById('aiKey').value, chip: !document.getElementById('aiSaved').hidden, hint: !document.getElementById('aiKeyHint').hidden }));
+  check({ id: 'UI-29', feature: 'Solve from a question: API key remembered on this device', input: 'type key; untick; tick; reload; ask; Change key; share link, JSON export, Copy answer; Forget key; reload',
+    expected: 'saved under mm.geminiKey: yes (box ticked by default) → no (unticked) → yes (ticked) | after reload: chip "Gemini key saved on this device ✓", field and hint hidden, cursor in the question box, request sent with the saved key | Change key shows the field | key not in share link, JSON export or copied answer | Forget: removed, field empty, chip hidden | after reload: no key, field and hint shown | never in sessionStorage or another storage name',
+    actual: `saved under mm.geminiKey: ${yn(s1)} (box ticked by default) → ${yn(s2)} (unticked) → ${yn(s3)} (ticked) | ` +
+      `after reload: chip "${restored.chip}", field and hint ${!restored.field && !restored.hint ? 'hidden' : 'SHOWN'}, cursor in ${restored.focus === 'aiQuestion' ? 'the question box' : restored.focus}, ${sentWith} | ` +
+      `${changeShows} | key ${leak.length ? 'FOUND in ' + leak.join(', ') : 'not in share link, JSON export or copied answer'} | ` +
+      `Forget: ${s4.slot ? 'NOT removed' : 'removed'}, field ${afterForget.field === '' ? 'empty' : 'NOT empty'}, chip ${afterForget.chip ? 'SHOWN' : 'hidden'} | ` +
+      `after reload: ${fresh.field === '' && !fresh.chip ? 'no key' : 'KEY STILL THERE'}, field and hint ${fresh.hint ? 'shown' : 'NOT shown'} | ` +
+      `${[s1, s2, s3, s4].some((x) => x.session || x.other) ? 'FOUND in sessionStorage or another name' : 'never in sessionStorage or another storage name'}`, evidence: 'test log' });
+  await page.fill('#aiKey', '');
+  await page.evaluate(() => { document.getElementById('solver').open = false; });
+  await preset('ex1');
 
   // UI-16 design tab
   await page.click('.tab[data-tab="design"]');
