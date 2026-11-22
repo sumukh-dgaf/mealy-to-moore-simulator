@@ -316,7 +316,7 @@ kbd { font: 12px var(--mono); border: 1px solid var(--field-line); border-bottom
 .solver[open] > summary { margin-bottom: 10px; }
 .badge-ai { font-size: 12px; font-weight: 700; color: var(--amber); background: var(--amber-soft); padding: 2px 10px; border-radius: 99px; }
 .solver-key { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin: 10px 0; font-size: 13px; }
-.solver-key input[type=password], .solver-key input[type=text] { padding: 6px 9px; border: 1px solid var(--field-line); border-radius: var(--r-sm); background: var(--field); margin-left: 6px; }
+.solver-key input[type=password], .solver-key input[type=text], .solver-key select { padding: 6px 9px; border: 1px solid var(--field-line); border-radius: var(--r-sm); background: var(--field); margin-left: 6px; }
 .solver-key input[type=password] { width: 260px; }
 .solver-key input[type=text] { width: 170px; }
 label.inline { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }

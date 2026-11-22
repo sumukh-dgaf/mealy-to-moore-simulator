@@ -98,8 +98,8 @@
             <label class="inline"><input id="aiRemember" type="checkbox" checked> Remember on this device</label>
           </span>
           <button id="aiForget" class="btn small" type="button">Forget key</button>
-          <label>Model id <input id="aiModel" type="text" spellcheck="false" aria-describedby="aiModelHint"></label>
-          <span id="aiModelHint" class="hint">change only if Google renames or retires the model</span>
+          <label>Model <select id="aiModelChoice"><option value="auto">Auto (recommended)</option><option value="custom">Custom…</option></select></label>
+          <label id="aiCustomBox" hidden>Model id <input id="aiModel" type="text" spellcheck="false" placeholder="any Gemini model id"></label>
         </div>
         <div id="aiExamples" class="samples"><span>Example questions:</span></div>
         <label for="aiQuestion" class="label">Question</label>

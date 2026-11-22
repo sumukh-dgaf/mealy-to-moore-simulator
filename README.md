@@ -30,7 +30,7 @@ Each feature is covered by at least one documented test. The IDs refer to `TestC
 12. **Project design tab** with the Milestone-1 design summary. (UI-16)
 13. **Works offline** by double-clicking `index.html`; the layout has no sideways scrolling at 1200–1366 px. (UI-17, UI-14)
 14. **Console front-end** (`src/cli.js`) for reproducible text output. (TC-26)
-15. **Solve from a question** (AI; needs internet and a free Gemini API key). Paste a question in any wording or add a photo of it (PNG/JPEG/WebP, up to 14 MB), or try one of 4 example questions. Gemini returns the Mealy machine as structured JSON. The panel shows *Understood as*: the transition table, the state diagram, the start state, what each state means, the AI's assumptions (highlighted), anything the question does not give (as errors), and a **self-check** that runs the AI's test cases from the question on the machine (✓/✗). Then: *Use this machine* (into the editor, to fix any cell), *Convert to Moore* (the normal flow), or *Ask again*. If the model is overloaded (HTTP 503) or does not answer within 60 seconds, the panel tries the other Flash model once (`gemini-3.6-flash` ↔ `gemini-3.8-flash`) and says which model answered, e.g. "Answered by gemini-3.6-flash". (TC-27 … TC-31, TC-34 … TC-36, UI-19 … UI-22, UI-25 … UI-31)
+15. **Solve from a question** (AI; needs internet and a free Gemini API key). Paste a question in any wording or add a photo of it (PNG/JPEG/WebP, up to 14 MB), or try one of 4 example questions. Gemini returns the Mealy machine as structured JSON. The panel shows *Understood as*: the transition table, the state diagram, the start state, what each state means, the AI's assumptions (highlighted), anything the question does not give (as errors), and a **self-check** that runs the AI's test cases from the question on the machine (✓/✗). Then: *Use this machine* (into the editor, to fix any cell), *Convert to Moore* (the normal flow), or *Ask again*. A **Model** switcher next to the key offers *Auto (recommended)*, `gemini-3.6-flash`, `gemini-3.8-flash`, `gemini-3.5-flash-lite` and *Custom…* (any model id); the choice is remembered on this device. *Auto* tries `gemini-3.6-flash` → `gemini-3.8-flash` → `gemini-3.5-flash-lite` and moves to the next model on HTTP 429 (quota), 503 (high demand) or the 60-second timeout; it stops at once on a rejected key or a safety block. A model that answers 429 is shown as "(quota used up today)" and skipped until its quota resets at midnight Pacific time (about 1:30 pm IST). A chosen model is asked alone, with no fallback. The status line says which model answered, e.g. "Answered by gemini-3.6-flash". (TC-27 … TC-31, TC-34 … TC-37, UI-19 … UI-22, UI-25 … UI-34)
 16. **Explanation in words**: after every conversion, the steps are narrated in full sentences, generated from the step log (no AI, so it always matches the result), ending with one sentence per Moore state. Moore state names can be shown as `[A,0]` or textbook-style `A0` (`A_0` when the Mealy name ends in a digit); *Copy answer* copies the explanation and the final Moore table as plain text. (TC-32, TC-33, UI-23, UI-24)
 
 ## Technology stack and dependencies
@@ -42,7 +42,7 @@ Each feature is covered by at least one documented test. The IDs refer to `TestC
 | Node.js | v24.21.0 (Node.js 20 or newer is required for the built-in test runner) | the automated tests and the console version only. Uses only built-in modules (`node:test`, `node:assert`, `node:fs`, `node:child_process`); **no npm packages**. |
 | Python | 3.10.11 (any Python 3) | optional: serving the folder with `python -m http.server` |
 | Playwright | 1.63.0 | optional, developer only: `tests/ui-check.js` (scripted UI checks and screenshots). It is **not** a dependency of the project and is not included. |
-| Google Gemini API (external service) | `generateContent` REST endpoint, `v1beta`; default model id **`gemini-3.6-flash`**, automatic one-time fallback to `gemini-3.8-flash` (changeable in the *Model id* setting); lowest thinking level the docs allow, set with `generationConfig.thinkingConfig.thinkingLevel` (`MINIMAL` on 3.6-flash, `LOW` on 3.8-flash) | only *Solve from a question*. Called directly from the browser with `fetch` (no SDK); the key is sent only in the `x-goog-api-key` header. Needs internet and a free API key. |
+| Google Gemini API (external service) | `generateContent` REST endpoint, `v1beta`; model switcher, default **Auto**: `gemini-3.6-flash` → `gemini-3.8-flash` → `gemini-3.5-flash-lite` (all stable free-tier models, <https://aistudio.google.com/docs/models>); lowest thinking level the docs allow, set with `generationConfig.thinkingConfig.thinkingLevel` (`MINIMAL` on 3.6-flash and 3.5-flash-lite, `LOW` on 3.8-flash) | only *Solve from a question*. Called directly from the browser with `fetch` (no SDK); the key is sent only in the `x-goog-api-key` header. Needs internet and a free API key. |
 
 **Data use.** On the free tier, Google may use what you send to improve its products. Do not paste private data into *Solve from a question*.
 
@@ -103,7 +103,7 @@ In the browser, Example 1 loads automatically. Press **Convert to Moore** after 
 | `gemini-3.5-flash-lite` (MINIMAL) | 2 / 5 | mean 4.4 s; 2 × HTTP 503, one wrong machine |
 | `gemini-3.1-flash-lite` (MINIMAL) | 1 / 5 | mean 2.6 s; 3 × wrongly read as a Moore question, one wrong machine |
 
-`gemini-3.6-flash` was the fastest model that passed all 5 self-checks. The Flash-Lite models are faster but read questions wrongly, and `gemini-2.5-flash-lite` is open only to existing users, so it was not tried. Enter another id in **Model id** to switch.
+`gemini-3.6-flash` was the fastest model that passed all 5 self-checks. The Flash-Lite models are faster but read questions wrongly, and `gemini-2.5-flash-lite` is open only to existing users, so it was not tried. It is therefore first in *Auto*. `gemini-3.5-flash-lite` is the last resort: it is fast, but its answers need the most checking.
 
 ## Example
 
@@ -187,7 +187,7 @@ Run the automated tests in the `SourceCode` folder:
 node --test
 ```
 
-(`npm test` does the same.) The suite runs 36 tests (58 checks) and finishes in well under a second. It makes **no network calls**: *Solve from a question* is tested with hand-written model replies (`tests/fixtures/ai/`), and the scripted UI checks replace the Gemini API with a mock.
+(`npm test` does the same.) The suite runs 37 tests (59 checks) and finishes in well under a second. It makes **no network calls**: *Solve from a question* is tested with hand-written model replies (`tests/fixtures/ai/`), and the scripted UI checks replace the Gemini API with a mock.
 
 - **Test data:** the two examples in `examples/presets.js`, the hand-worked machines in `tests/machines/*.json` (also copied to `TestCases/` as JSON), seeded random machines from `tests/fixtures.js`, and the model replies in `tests/fixtures/ai/*.json`.
 - **Reading the result:** every test prints `✔` (pass) or `✖` (fail) with its ID, followed by a line `ℹ TC-xx observed: …` with the value the program produced. The summary at the end shows `ℹ pass` and `ℹ fail`. The expected value of every check, and where it comes from (a hand-worked trace, the design document, a validation rule), is in `TestCases/test_cases.md`.
@@ -196,7 +196,7 @@ node --test
   $env:TEST_RESULTS = "results.json"; node --test
   node tests/make-test-table.js results.json | Out-File -Encoding utf8 test_cases.md
   ```
-- **Scripted UI checks and screenshots** (optional; needs Playwright, which is not part of the project; 32 checks, the Gemini API is mocked; takes about 2½ minutes because one check waits for the 60-second timeout on both models): start `python -m http.server 8000`, then
+- **Scripted UI checks and screenshots** (optional; needs Playwright, which is not part of the project; 35 checks, the Gemini API is mocked; takes about 1½ minutes because one check waits for the 60-second timeout): start `python -m http.server 8000`, then
   ```
   $env:PLAYWRIGHT = "<folder containing node_modules/playwright>"; node tests/ui-check.js http://localhost:8000/ screenshots
   ```
@@ -213,7 +213,7 @@ node --test
 - The diagram uses a simple layered layout. Machines with more than about 15 Moore states are drawn at a fixed minimum size and scroll, and edges may still cross.
 - The step-log text for step A1 lists every entering transition, which costs O(|Q|²·|Σ|). Conversion stays under 0.2 s up to 1,000 Mealy states (see `docs/evidence/benchmark.txt`).
 - A share link stores the Mealy machine only. The options (default output, start copy, pruning) reset to their defaults.
-- *Solve from a question*: the AI can misread a question or design a wrong machine. That is why the panel shows *Understood as*, the assumptions, the missing information and the self-check before anything is converted, and why you can edit the machine. The conversion and the equivalence check are always this project's deterministic code. The feature needs internet. A reply takes 15–30 seconds. The timeout is 60 seconds per model; it was raised from 30 seconds after one of 7 live questions timed out on both models at 30 seconds. The free tier has rate limits: about 20 requests per day per model were observed (HTTP 429 after that, until the daily reset). The automated tests make no live call: they use hand-written replies and a mocked API.
+- *Solve from a question*: the AI can misread a question or design a wrong machine. That is why the panel shows *Understood as*, the assumptions, the missing information and the self-check before anything is converted, and why you can edit the machine. The conversion and the equivalence check are always this project's deterministic code. The feature needs internet. A reply takes 15–30 seconds. The timeout is 60 seconds per model; it was raised from 30 seconds after one of 7 live questions timed out on both models at 30 seconds. The free tier allows about 20 requests per model per day (observed; HTTP 429 after that). Quotas reset at midnight Pacific time, about 1:30 pm IST (12:30 pm IST while the US is on daylight saving time). *Auto* then uses the next model, so a day has about 60 requests across the three models. The "quota used up today" marks are kept per browser and per address, like the key; a 429 that says it is only the per-minute limit does not mark the model. The automated tests make no live call: they use hand-written replies and a mocked API.
 - *Saved API key*: the key is stored unencrypted in the browser profile. Anyone who uses this browser profile, and any other page served from the same address (for example another project served at `http://localhost:8000`), can read it. Press **Forget key** before lending the computer, and use a free-tier key with no billing attached. The key is saved per browser and per address, so it must be pasted again in another browser or at another address.
 
 **Troubleshooting**
@@ -227,9 +227,11 @@ node --test
 - *Solve from a question says "Could not reach the Gemini API":* check the internet connection; a firewall or proxy may block `generativelanguage.googleapis.com`. Everything else still works offline.
 - *"The API key was not accepted":* press **Change key** (or **Forget key**) and paste the whole key again from <https://aistudio.google.com/apikey>.
 - *The saved key is not found / the key field appears again:* the page was opened at a different address or in a different browser. Open <http://localhost:8000/> in the same browser as before (see How to run).
-- *"free-tier limit was reached (429)":* wait a minute and try again. If it says the daily quota is used up, wait for the daily reset, or enter the other model id (`gemini-3.8-flash` or `gemini-3.6-flash`) in **Model id**: each model has its own quota.
-- *"… is overloaded right now (503: high demand)" or "did not answer within 60 seconds":* the panel already tried the other model once. Wait a few minutes and press **Read the question** again.
-- *"The model … was not found":* Google renamed or retired the model; enter the current Flash model id from <https://aistudio.google.com/docs/models> in **Model id**.
+- *"… reached its free-tier limit (429)" with a chosen model:* choose *Auto* or another model (each model has its own quota), or wait for the reset.
+- *"All free Gemini models have used today's quota":* every *Auto* model answered 429 today. Wait for the reset (the message gives the time), or choose a model manually to try it anyway (for example a *Custom…* Flash-Lite id).
+- *A model shows "(quota used up today)" although the reset has passed:* the mark is removed automatically after the reset time; reload the page to refresh the labels.
+- *"… is overloaded right now (503: high demand)" or "did not answer within 60 seconds":* in *Auto* the panel already tried the next model. Wait a few minutes and press **Read the question** again.
+- *"The model … was not found":* Google renamed or retired the model; choose *Custom…* and enter a current free-tier model id from <https://aistudio.google.com/docs/models>.
 
 ## Team contributions and acknowledgements
 

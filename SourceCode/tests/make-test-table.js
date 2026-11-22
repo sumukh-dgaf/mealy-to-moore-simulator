@@ -61,7 +61,7 @@ const FEATURES = [
   ['Runs offline from file://; no sideways scrolling at 1200–1366 px', ['UI-17', 'UI-14']],
   ['Console front-end', ['TC-26', 'TC-26b']],
   ['Performance', ['TC-21']],
-  ['Solve from a question (AI reads the question; mocked API in tests)', ['TC-27', 'TC-28', 'TC-29a', 'TC-29b', 'TC-29c', 'TC-30a', 'TC-30b', 'TC-31', 'TC-34', 'TC-35', 'TC-36', 'UI-19', 'UI-20', 'UI-21', 'UI-22', 'UI-25', 'UI-26', 'UI-27', 'UI-28', 'UI-29', 'UI-30', 'UI-31']],
+  ['Solve from a question (AI reads the question; mocked API in tests)', ['TC-27', 'TC-28', 'TC-29a', 'TC-29b', 'TC-29c', 'TC-30a', 'TC-30b', 'TC-31', 'TC-34', 'TC-35', 'TC-36', 'TC-37', 'UI-19', 'UI-20', 'UI-21', 'UI-22', 'UI-25', 'UI-26', 'UI-27', 'UI-28', 'UI-29', 'UI-30', 'UI-31', 'UI-32', 'UI-33', 'UI-34']],
   ['Explanation in words, Moore state names and Copy answer', ['TC-32a', 'TC-32b', 'TC-32c', 'TC-33', 'UI-23', 'UI-24']],
 ];
 const GUIDE = [
@@ -96,7 +96,7 @@ out.push('- TC-02 planned "classic textbook machines from course material". No c
   'classic machines (complementer, running parity, overlapping 101 detector) were converted by hand and the program is checked against those hand results.');
 out.push('- TC-12 planned 500 random strings; it runs 500 seeded strings on each of 7 machines (3,500 comparisons). TC-21 reports the median of 5 timed runs.');
 out.push('- TC-13 (missing transition): the simulator rejects incomplete machines with one error per missing (state, symbol) pair. It never adds a trap state.');
-out.push('- TC-27 … TC-36 and UI-19 … UI-31 test "Solve from a question". They use hand-written model replies in the response-schema format (tests/fixtures/ai/) and, in the UI checks, a mocked Gemini API (Playwright route interception). No live API call is made by the tests.');
+out.push('- TC-27 … TC-37 and UI-19 … UI-34 test "Solve from a question". They use hand-written model replies in the response-schema format (tests/fixtures/ai/) and, in the UI checks, a mocked Gemini API (Playwright route interception). No live API call is made by the tests.');
 out.push('- Cross-checks are against hand-worked traces only (TC-01, TC-02a–c, TC-03a–b, TC-07, TC-09, TC-10, TC-11). No JFLAP cross-check was done.');
 
 fs.writeSync(1, out.join('\n') + '\n');

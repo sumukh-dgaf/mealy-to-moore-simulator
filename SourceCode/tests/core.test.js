@@ -519,15 +519,20 @@ test('TC-34 the API key never appears in the request body, URL, exports, share-l
   // code use only (the header comment names these places on purpose)
   const risky = [['sessionStorage', /\bsessionStorage\s*[.[]/], ['?key=', /[?&]key=/], ['console.', /\bconsole\.\w/]].filter(([, re]) => re.test(solveSrc)).map(([name]) => name);
   // localStorage: every use in solve.js names the one slot KEY_SLOT = 'mm.geminiKey'; no other file uses storage
-  const uses = [...solveSrc.matchAll(/\blocalStorage\.(\w+)\(([^,)]*)/g)].map((m) => m[2].trim());
-  const slot = (solveSrc.match(/const KEY_SLOT = '([^']+)'/) || [])[1];
+  const uses = [...solveSrc.matchAll(/\blocalStorage\.(\w+)\(([^,)]*)(?:,\s*([^)]*))?/g)].map((m) => ({ name: m[2].trim(), value: (m[3] || '').trim() }));
+  const slotOf = (c) => (solveSrc.match(new RegExp(`const ${c} = '([^']+)'`)) || [])[1];
+  const slot = slotOf('KEY_SLOT');
+  const names = { KEY_SLOT: slot, MODEL_SLOT: slotOf('MODEL_SLOT'), QUOTA_SLOT: slotOf('QUOTA_SLOT') };
   const others = ['index.html', 'src/ui/app.js', 'src/ui/render.js', 'src/ui/graph.js', 'src/core/explain.js', 'src/core/parser.js', 'src/core/questionSchema.js']
     .filter((p) => /\b(localStorage|sessionStorage)\b|mm\.geminiKey/.test(src(p)));
-  const storage = uses.length && uses.every((u) => u === 'KEY_SLOT') && slot === 'mm.geminiKey' && !others.length
-    ? 'localStorage only under mm.geminiKey, only in solve.js' : `localStorage uses: ${uses.join(', ')}; slot ${slot}; also in ${others.join(', ')}`;
+  const keyOnlyInKeySlot = uses.filter((u) => /apiKey/.test(u.value)).every((u) => u.name === 'KEY_SLOT');
+  const storage = uses.length && uses.every((u) => u.name in names) && keyOnlyInKeySlot && slot === 'mm.geminiKey'
+    && names.MODEL_SLOT === 'mm.geminiModel' && names.QUOTA_SLOT === 'mm.geminiQuota' && !others.length
+    ? 'localStorage only under mm.geminiKey (the key), mm.geminiModel and mm.geminiQuota, only in solve.js'
+    : `localStorage uses: ${uses.map((u) => u.name).join(', ')}; key slot ${slot}; key only in key slot: ${keyOnlyInKeySlot}; also in ${others.join(', ')}`;
   check(t, { id: 'TC-34', category: 'Invalid input', feature: 'Solve from a question: API key handling', machine: `${AI}q1_sentences.json`,
     input: 'scan request, URL, exports, explanation; scan solve.js for sessionStorage, ?key=, console.; scan src/ for storage use',
-    expected: 'no key anywhere; solve.js uses none of them; localStorage only under mm.geminiKey, only in solve.js; key sent only as x-goog-api-key header',
+    expected: 'no key anywhere; solve.js uses none of them; localStorage only under mm.geminiKey (the key), mm.geminiModel and mm.geminiQuota, only in solve.js; key sent only as x-goog-api-key header',
     actual: `${leaks.length ? 'key in: ' + leaks.join(', ') : 'no key anywhere'}; ${risky.length ? 'solve.js uses ' + risky.join(', ') : 'solve.js uses none of them'}; ${storage}; ` +
       `key sent only as ${solveSrc.includes("'x-goog-api-key': apiKey") ? 'x-goog-api-key header' : 'UNKNOWN'}` });
 });
@@ -541,10 +546,28 @@ test('TC-35 the request asks for JSON with the response schema and can carry an 
   assert.throws(() => Q.endpointUrl('bad model/../x'), /not a valid model id/);
 });
 
-test('TC-36 lowest thinking level per model, and the 3.6-flash ↔ 3.8-flash fallback pair', (t) => {
+test('TC-36 lowest thinking level per model, and the Auto fallback list', (t) => {
   const level = (m) => (Q.buildRequestBody('q', null, m).generationConfig.thinkingConfig || { thinkingLevel: 'none' }).thinkingLevel;
   const models = ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'some-other-model'];
-  check(t, { id: 'TC-36', category: 'Normal', feature: 'Solve from a question: thinking level and model fallback', machine: '—', input: models.join(', '),
-    expected: 'default gemini-3.6-flash | thinking MINIMAL, LOW, MINIMAL, MINIMAL, none | fallback gemini-3.8-flash, gemini-3.6-flash, none, none, none',
-    actual: `default ${Q.DEFAULT_MODEL} | thinking ${models.map(level).join(', ')} | fallback ${models.map((m) => Q.fallbackModel(m) || 'none').join(', ')}` });
+  check(t, { id: 'TC-36', category: 'Normal', feature: 'Solve from a question: thinking level and Auto model list', machine: '—', input: models.join(', '),
+    expected: 'default gemini-3.6-flash | thinking MINIMAL, LOW, MINIMAL, MINIMAL, none | Auto gemini-3.6-flash → gemini-3.8-flash → gemini-3.5-flash-lite',
+    actual: `default ${Q.DEFAULT_MODEL} | thinking ${models.map(level).join(', ')} | Auto ${Q.AUTO_MODELS.join(' → ')}` });
+});
+
+test('TC-37 quota marks: reset at midnight Pacific time, skipped until then, the "all used up" message', (t) => {
+  const reset = (iso) => new Date(Q.nextQuotaReset(Date.parse(iso))).toISOString().slice(0, 16) + 'Z';
+  const at = (iso) => Q.allUsedUpMessage(Q.nextQuotaReset(Date.parse(iso))).match(/about (.+) IST/)[1];
+  const now = Date.parse('2026-11-22T10:00:00Z');
+  const marks = { 'gemini-3.6-flash': Q.nextQuotaReset(now) };
+  const all = Object.fromEntries(Q.AUTO_MODELS.map((m) => [m, Q.nextQuotaReset(now)]));
+  const perDay = { error: { code: 429, status: 'RESOURCE_EXHAUSTED', details: [{ violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier' }] }] } };
+  const perMinute = { error: { code: 429, status: 'RESOURCE_EXHAUSTED', details: [{ violations: [{ quotaId: 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier' }] }] } };
+  check(t, { id: 'TC-37', category: 'Boundary', feature: 'Solve from a question: daily quota marks', machine: '—',
+    input: '22 Nov 10:00 UTC (PST); 1 Jul 12:00 UTC (PDT); 1 Nov 07:30 UTC (the night daylight saving ends); marks; 429 bodies',
+    expected: 'reset 2026-11-23T08:00Z (1:30 pm IST), 2026-07-02T07:00Z (12:30 pm IST), 2026-11-02T08:00Z | 3.6 marked: gemini-3.8-flash, gemini-3.5-flash-lite | after the reset: all 3 | all marked: none | per-day 429 marks, per-minute 429 does not | ' +
+      "All free Gemini models have used today's quota. It resets at about 1:30 pm IST. Choose a model manually or try later.",
+    actual: `reset ${reset('2026-11-22T10:00:00Z')} (${at('2026-11-22T10:00:00Z')} IST), ${reset('2026-07-01T12:00:00Z')} (${at('2026-07-01T12:00:00Z')} IST), ${reset('2026-11-01T07:30:00Z')} | ` +
+      `3.6 marked: ${Q.availableModels(marks, now).join(', ')} | after the reset: all ${Q.availableModels(marks, Q.nextQuotaReset(now)).length} | ` +
+      `all marked: ${Q.availableModels(all, now).join(', ') || 'none'} | per-day 429 ${Q.isDailyQuota(perDay) ? 'marks' : 'does not mark'}, per-minute 429 ${Q.isDailyQuota(perMinute) ? 'marks' : 'does not'} | ` +
+      Q.allUsedUpMessage(Q.nextQuotaReset(now)) });
 });

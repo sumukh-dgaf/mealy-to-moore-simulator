@@ -10,6 +10,11 @@
  * x-goog-api-key request header: never in a URL, a project file, an export, the share link, the
  * copied answer or the console. "Forget key" removes it from memory and from the browser.
  *
+ * Model switcher (remembered on this device under MODEL_SLOT; "Forget key" keeps it): "Auto" tries
+ * M.AUTO_MODELS in order and moves on after a 429 (quota), a 503 (high demand) or a timeout; a model
+ * that answers 429 is marked "quota used up today" (QUOTA_SLOT) and skipped until the next reset at
+ * midnight Pacific time. A chosen model (or a Custom id) is asked alone, with no fallback.
+ *
  * Errors (no key, invalid key, 429 quota, safety block, network/CORS failure, 60 s timeout, reply
  * without valid JSON (retried once), empty question, photo too large) are shown in the panel; the
  * rest of the simulator, which works offline, is never affected.
@@ -20,7 +25,10 @@
   const { esc } = V;
   const $ = (id) => document.getElementById(id);
 
-  const KEY_SLOT = 'mm.geminiKey'; // the only localStorage name, used only with "Remember on this device"
+  // localStorage names (this device only); the key is stored only under KEY_SLOT
+  const KEY_SLOT = 'mm.geminiKey'; // the API key, only with "Remember on this device"
+  const MODEL_SLOT = 'mm.geminiModel'; // the model choice: "auto", a listed model id or a custom id
+  const QUOTA_SLOT = 'mm.geminiQuota'; // {model id: ms when its daily quota resets} for models that answered 429
   const TIMEOUT_MS = 60000; // gemini-3.6-flash took 17–30 s in the live runs, so 30 s was too tight
   // Gemini allows 20 MB per request; base64 makes the photo a third larger, so 14 MB stays below it.
   const MAX_IMAGE_BYTES = 14 * 1024 * 1024;
@@ -36,7 +44,6 @@
     $('aiStatus').className = 'msg ' + (kind === 'error' ? 'error' : kind === 'ok' ? 'ok' : 'warn');
     $('aiStatus').textContent = hideKey(text);
   };
-  const model = () => $('aiModel').value.trim() || M.DEFAULT_MODEL;
 
   /* ---------- key: memory, optional localStorage on this device, forget ---------- */
   const storeKey = () => {
@@ -66,7 +73,34 @@
     showSaved(false);
     status('The key was forgotten (removed from this page and from this device).', 'ok');
   });
-  $('aiModel').value = M.DEFAULT_MODEL;
+  /* ---------- model switcher, remembered on this device; models out of quota are marked until the reset ---------- */
+  const sel = $('aiModelChoice');
+  sel.querySelector('option[value="custom"]').insertAdjacentHTML('beforebegin', M.AUTO_MODELS.map((m) => `<option value="${m}">${m}</option>`).join(''));
+  const usedUp = () => {
+    try { return JSON.parse(localStorage.getItem(QUOTA_SLOT)) || {}; } catch { return {}; }
+  };
+  const markUsedUp = (m) => {
+    const marks = usedUp();
+    marks[m] = M.nextQuotaReset(Date.now());
+    try { localStorage.setItem(QUOTA_SLOT, JSON.stringify(marks)); } catch { /* storage blocked: Auto retries it next time */ }
+  };
+  const labelModels = () => {
+    const marks = usedUp(), now = Date.now();
+    M.AUTO_MODELS.forEach((m) => { sel.querySelector(`option[value="${m}"]`).textContent = marks[m] > now ? `${m} (quota used up today)` : m; });
+  };
+  const saveChoice = () => {
+    $('aiCustomBox').hidden = sel.value !== 'custom';
+    const choice = sel.value === 'custom' ? $('aiModel').value.trim() : sel.value;
+    if (choice) try { localStorage.setItem(MODEL_SLOT, choice); } catch { /* storage blocked */ }
+  };
+  let savedChoice = 'auto';
+  try { savedChoice = localStorage.getItem(MODEL_SLOT) || 'auto'; } catch { /* storage blocked */ }
+  if (savedChoice === 'auto' || M.AUTO_MODELS.includes(savedChoice)) sel.value = savedChoice;
+  else { sel.value = 'custom'; $('aiModel').value = savedChoice; }
+  $('aiCustomBox').hidden = sel.value !== 'custom';
+  labelModels();
+  sel.addEventListener('change', () => { saveChoice(); if (sel.value === 'custom') $('aiModel').focus(); });
+  $('aiModel').addEventListener('input', saveChoice);
   // the panel opens expanded: type → Read the question → check → Convert to Moore
   $('aiQuestion').focus();
 
@@ -108,8 +142,8 @@
     const err = data && data.error ? `${data.error.status || ''} ${data.error.message || ''}`.trim() : '';
     let text;
     if ((code === 400 && /api.?key/i.test(err)) || code === 401 || code === 403) text = 'The API key was not accepted. Check that you copied the whole key from aistudio.google.com/apikey.';
-    else if (code === 429) text = 'Gemini\'s free-tier limit was reached (429: too many requests, or the daily quota is used up). Wait a minute and try again.';
-    else if (code === 404) text = `The model "${m}" was not found. Check the Model id setting.`;
+    else if (code === 429) text = `${m} reached its free-tier limit (429: too many requests, or today's quota of about 20 requests is used up).`;
+    else if (code === 404) text = `The model "${m}" was not found. Choose another model.`;
     else if (code === 503) text = `${m} is overloaded right now (503: high demand).`;
     else if (code >= 500) text = `Gemini had a server problem (${code}). Try again in a moment.`;
     else text = `Gemini rejected the request (${code}).`;
@@ -120,7 +154,8 @@
    * One generateContent call to model m. The key goes only in the x-goog-api-key header.
    * @returns {Promise<{reply: Object}|{blocked: string}|{invalid: string}>}
    * @throws {Error} with a user-facing message on timeout, network/CORS failure or an HTTP error;
-   *         error.busy is true for 503 (high demand) and for a timeout, the cases that try the other model
+   *         error.busy: 503 (high demand) or a timeout; error.quota: 429 / RESOURCE_EXHAUSTED (error.daily
+   *         unless it was only the per-minute limit). Auto mode moves to the next model on busy or quota.
    */
   async function callGemini(body, m) {
     const ctrl = new AbortController();
@@ -147,6 +182,8 @@
     if (!resp.ok) {
       const err = new Error(httpMessage(resp.status, data, m));
       err.busy = resp.status === 503 || /high demand/i.test((data && data.error && data.error.message) || '');
+      err.quota = resp.status === 429 || (data && data.error && data.error.status) === 'RESOURCE_EXHAUSTED';
+      err.daily = err.quota && M.isDailyQuota(data);
       throw err;
     }
     return M.readResponse(data);
@@ -167,9 +204,13 @@
     const question = $('aiQuestion').value.trim();
     if (!apiKey) return status('Enter a Gemini API key first (free from aistudio.google.com/apikey). Only this panel needs a key and internet.', 'error');
     if (!question && !image) return status('Type or paste the question (or add a photo of it) first.', 'error');
-    let used = model();
+    // Auto: the Auto list minus models marked out of quota; a chosen model: only that one, no fallback
+    const auto = sel.value === 'auto';
+    const chain = auto ? M.availableModels(usedUp(), Date.now()) : [sel.value === 'custom' ? $('aiModel').value.trim() : sel.value];
+    if (!chain.length) return status(M.allUsedUpMessage(M.nextQuotaReset(Date.now())), 'error');
+    if (!chain[0]) return status('Type a model id in the Custom box, or choose a model.', 'error');
     try {
-      M.endpointUrl(used);
+      M.endpointUrl(chain[0]);
     } catch (e) {
       return status(e.message, 'error');
     }
@@ -179,20 +220,23 @@
     $('aiPreview').hidden = true;
     $('aiPreview').innerHTML = '';
     try {
-      let res;
-      try {
-        res = await askModel(used, question);
-      } catch (e) {
-        // overloaded (503) or no answer in time: try the other model ONCE (3.6-flash ↔ 3.8-flash)
-        const other = M.fallbackModel(used);
-        if (!e.busy || !other) throw e;
-        status(`${e.message} Trying ${other} once…`);
-        used = other;
+      let res, used;
+      const failed = [];
+      for (let i = 0; i < chain.length && !res; i++) {
         try {
-          res = await askModel(other, question);
-        } catch (e2) {
-          throw new Error(`${e.message} Then ${other} was tried once: ${e2.message} Try again later.`);
+          res = await askModel(chain[i], question);
+          used = chain[i];
+        } catch (e) {
+          if (e.daily) markUsedUp(chain[i]);
+          // a bad key, a network failure or a reply that is still not JSON stops at once; a chosen model is tried once
+          if (!auto || !(e.quota || e.busy)) throw e;
+          failed.push(e.message);
+          if (i + 1 < chain.length) status(`${e.message} Trying ${chain[i + 1]}…`);
         }
+      }
+      if (!res) {
+        if (!M.availableModels(usedUp(), Date.now()).length) throw new Error(M.allUsedUpMessage(M.nextQuotaReset(Date.now())));
+        throw new Error(`${failed.join(' ')} Every Auto model was tried once; try again later, or choose a model manually.`);
       }
       if (res.blocked) return status(res.blocked, 'error');
       result = M.normaliseReply(res.reply);
@@ -203,6 +247,7 @@
       status(e.message, 'error');
     } finally {
       $('aiAsk').disabled = false;
+      labelModels();
     }
   }
   $('aiAsk').addEventListener('click', ask);

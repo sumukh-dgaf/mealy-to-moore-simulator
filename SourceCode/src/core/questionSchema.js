@@ -21,7 +21,7 @@
   /**
    * Default model id: gemini-3.6-flash, a stable free-tier Flash model (aistudio.google.com/docs/models).
    * Measured on 22 Nov 2026 it was the only free model whose answers to all 5 benchmark questions passed
-   * the self-check; gemini-3.8-flash answered 503 (high demand). The two fall back to each other.
+   * the self-check; gemini-3.8-flash answered 503 (high demand). First model of the Auto list (AUTO_MODELS).
    */
   const DEFAULT_MODEL = 'gemini-3.6-flash';
 
@@ -70,11 +70,43 @@
   const LOWEST_THINKING = { 'gemini-3.8-flash': 'LOW', 'gemini-3.6-flash': 'MINIMAL', 'gemini-3.5-flash-lite': 'MINIMAL', 'gemini-3.1-flash-lite': 'MINIMAL' };
 
   /**
-   * The model to retry with, once, when a model is overloaded (HTTP 503) or does not answer in time.
-   * @param {string} model
-   * @returns {string|null}  the other of gemini-3.6-flash / gemini-3.8-flash; null for any other model
+   * "Auto" mode: tried in this order; the next one is used after a 429 (quota), a 503 (high demand)
+   * or a timeout. All three are stable free-tier models (aistudio.google.com/docs/models, /docs/pricing).
    */
-  const fallbackModel = (model) => ({ 'gemini-3.6-flash': 'gemini-3.8-flash', 'gemini-3.8-flash': 'gemini-3.6-flash' })[model] || null;
+  const AUTO_MODELS = [DEFAULT_MODEL, 'gemini-3.8-flash', 'gemini-3.5-flash-lite'];
+
+  // Wall-clock time of instant t in time zone tz, read as if it were UTC (ms).
+  function wallClock(t, tz) {
+    const p = {};
+    new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' })
+      .formatToParts(t).forEach((x) => { p[x.type] = +x.value; });
+    return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+  }
+
+  /**
+   * When free-tier daily quotas next reset: midnight Pacific time (aistudio.google.com/docs/rate-limits).
+   * @param {number} now  ms since the epoch
+   * @returns {number} ms since the epoch of the next midnight in America/Los_Angeles
+   */
+  function nextQuotaReset(now) {
+    const wall = wallClock(now, 'America/Los_Angeles');
+    const d = new Date(wall);
+    const midnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
+    const t = midnight - (wall - now); // with today's UTC offset
+    return t + (midnight - wallClock(t, 'America/Los_Angeles')); // corrected once if daylight saving changes before midnight
+  }
+
+  /** Auto-mode models whose quota is not marked as used up at time now. @param {Object<string, number>} usedUp  model → reset time */
+  const availableModels = (usedUp, now) => AUTO_MODELS.filter((m) => !(usedUp[m] > now));
+
+  /** True unless a 429 reply says it is only the per-minute limit (then the model is not marked for the day). */
+  const isDailyQuota = (data) => !/PerMinute|per minute/i.test(JSON.stringify(data || ''));
+
+  /** The one message shown when every Auto model has used its daily quota. @param {number} resetAt  ms since the epoch */
+  function allUsedUpMessage(resetAt) {
+    const ist = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit' }).format(resetAt).toLowerCase();
+    return `All free Gemini models have used today's quota. It resets at about ${ist} IST. Choose a model manually or try later.`;
+  }
 
   /** Four example questions for the panel's example buttons (and live demos). */
   const EXAMPLE_QUESTIONS = [
@@ -212,5 +244,5 @@
     });
   }
 
-  return { DEFAULT_MODEL, RESPONSE_SCHEMA, SYSTEM_INSTRUCTION, EXAMPLE_QUESTIONS, LOWEST_THINKING, fallbackModel, endpointUrl, buildRequestBody, readResponse, normaliseReply, selfCheck };
+  return { DEFAULT_MODEL, RESPONSE_SCHEMA, SYSTEM_INSTRUCTION, EXAMPLE_QUESTIONS, LOWEST_THINKING, AUTO_MODELS, nextQuotaReset, availableModels, isDailyQuota, allUsedUpMessage, endpointUrl, buildRequestBody, readResponse, normaliseReply, selfCheck };
 });

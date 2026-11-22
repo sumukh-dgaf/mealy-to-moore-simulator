@@ -55,12 +55,12 @@ function check(rec) {
   const first = await page.evaluate(() => ({
     open: document.getElementById('solver').open, focus: document.activeElement && document.activeElement.id,
     chip: !document.getElementById('aiSaved').hidden, field: !document.getElementById('aiKeyEntry').hidden,
-    ticked: document.getElementById('aiRemember').checked, hint: document.getElementById('aiKeyHint').hidden ? '' : document.getElementById('aiKeyHint').textContent.trim(),
+    model: document.getElementById('aiModelChoice').selectedOptions[0].textContent, ticked: document.getElementById('aiRemember').checked, hint: document.getElementById('aiKeyHint').hidden ? '' : document.getElementById('aiKeyHint').textContent.trim(),
   }));
   check({ id: 'UI-31', feature: 'Solve from a question: open by default, no key saved yet', input: `first visit to ${base}`,
-    expected: 'panel open; cursor in the question box; key field shown, "Remember on this device" ticked; hint: Paste your free key from aistudio.google.com once; it stays on this computer.',
+    expected: 'panel open; cursor in the question box; key field shown, "Remember on this device" ticked; model Auto (recommended); hint: Paste your free key from aistudio.google.com once; it stays on this computer.',
     actual: `panel ${first.open ? 'open' : 'closed'}; cursor in ${first.focus === 'aiQuestion' ? 'the question box' : first.focus || 'nothing'}; ` +
-      `key field ${first.field && !first.chip ? 'shown' : 'NOT shown'}, "Remember on this device" ${first.ticked ? 'ticked' : 'not ticked'}; hint: ${first.hint}`, evidence: 'test log' });
+      `key field ${first.field && !first.chip ? 'shown' : 'NOT shown'}, "Remember on this device" ${first.ticked ? 'ticked' : 'not ticked'}; model ${first.model}; hint: ${first.hint}`, evidence: 'test log' });
   // the classic screenshots show the simulator itself; the panel has its own screenshots (16, 17)
   await page.evaluate(() => { document.getElementById('solver').open = false; window.scrollTo(0, 0); });
   await page.screenshot({ animations: 'disabled', path: shot('01_editor_example1.png') });
@@ -224,6 +224,7 @@ function check(rec) {
 
   // ---------- Solve from a question: MOCKED Gemini API (Playwright route interception, no real network) ----------
   const FAKE_KEY = 'test-key-not-real-0000';
+  const Q = require(path.join(__dirname, '..', 'src', 'core', 'questionSchema.js'));
   const fixture = (name) => JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'ai', `${name}.json`), 'utf8'));
   const geminiOk = (reply) => ({ status: 200, body: { candidates: [{ content: { role: 'model', parts: [{ text: typeof reply === 'string' ? reply : JSON.stringify(reply) }] }, finishReason: 'STOP' }] } });
   let mock = null; // what the next request gets: {status, body} | 'abort' | 'hang'
@@ -312,8 +313,11 @@ function check(rec) {
     actual: `${(await text('#aiPreview .msg.error')).includes('The question does not say where B goes on input 1.') ? 'The question does not say where B goes on input 1. shown' : 'NOT shown'} | ` +
       `${convertDisabled ? 'Convert disabled' : 'Convert ENABLED'} | editor cell δ(B, 1) = ${cell === '' ? '—' : cell}`, evidence: 'test log' });
 
-  // API errors
+  // API errors, with one chosen model (manual mode: no fallback)
   const errorCase = async (m, timeout) => { mock = m; await ask(timeout); return aiStatus(); };
+  const modelsCalled = (from) => calls.slice(from).map((c) => c.url.match(/models\/([^:]+):/)[1]);
+  const clearMarks = () => page.evaluate(() => localStorage.removeItem('mm.geminiQuota'));
+  await page.selectOption('#aiModelChoice', 'gemini-3.6-flash');
   const before = calls.length;
   const r429 = await errorCase({ status: 429, body: { error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'Quota exceeded' } } });
   const rKey = await errorCase({ status: 400, body: { error: { code: 400, status: 'INVALID_ARGUMENT', message: 'API key not valid. Please pass a valid API key.' } } });
@@ -325,26 +329,96 @@ function check(rec) {
   const previewCleared = await page.isHidden('#aiPreview');
   check({ id: 'UI-27', feature: 'Solve from a question: API errors (mocked)', input: '429 | invalid key | safety block | reply not JSON | network failure',
     expected: '429 quota message | key not accepted | blocked | not valid JSON after 2 requests | could not reach the API | old preview cleared',
-    actual: [r429.includes('429') && r429.includes('free-tier limit') ? '429 quota message' : r429,
+    actual: [r429.startsWith('gemini-3.6-flash reached its free-tier limit (429') ? '429 quota message' : r429,
       rKey.startsWith('The API key was not accepted') && !rKey.includes(FAKE_KEY) ? 'key not accepted' : rKey,
       rBlock.startsWith('Gemini blocked the question') ? 'blocked' : rBlock,
       rJson.includes('(tried twice)') ? `not valid JSON after ${invalidCalls} requests` : rJson,
       rNet.startsWith('Could not reach the Gemini API') ? 'could not reach the API' : rNet,
       previewCleared ? 'old preview cleared' : 'OLD PREVIEW STILL SHOWN'].join(' | '),
     detail: `${calls.length - before} mocked requests`, evidence: 'test log' });
-  const rTimeout = await errorCase('hang', 150000); // both models time out after 60 s each
-  check({ id: 'UI-28', feature: 'Solve from a question: 60 s timeout, then the other model once (mocked)', input: 'no request is ever answered',
-    expected: 'gemini-3.6-flash did not answer within 60 seconds (timeout). Then gemini-3.8-flash was tried once: gemini-3.8-flash did not answer within 60 seconds (timeout). Try again later.',
-    actual: rTimeout, evidence: 'test log' });
+  const nTimeout = calls.length;
+  const rTimeout = await errorCase('hang', 75000); // the page gives up after 60 s
+  check({ id: 'UI-28', feature: 'Solve from a question: 60 s timeout with a chosen model (mocked)', input: 'gemini-3.6-flash chosen; the request is never answered',
+    expected: 'gemini-3.6-flash did not answer within 60 seconds (timeout). | 1 model call: gemini-3.6-flash',
+    actual: `${rTimeout} | ${calls.length - nTimeout} model call: ${modelsCalled(nTimeout).join(', ')}`, evidence: 'test log' });
 
-  // gemini-3.6-flash overloaded (503) → one automatic retry with gemini-3.8-flash, which answers
-  const nBefore = calls.length;
+  // Auto mode: 429 on gemini-3.6-flash → marked for today, gemini-3.8-flash answers
+  await page.selectOption('#aiModelChoice', 'auto');
+  await clearMarks();
+  const quota = { status: 429, body: { error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'You exceeded your current quota. Quota exceeded for metric: generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash',
+    details: [{ '@type': 'type.googleapis.com/google.rpc.QuotaFailure', violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier' }] }] } } };
   const busy = { status: 503, body: { error: { code: 503, status: 'UNAVAILABLE', message: 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.' } } };
-  const rFallback = await errorCase((req) => (req.url().includes('gemini-3.6-flash') ? busy : geminiOk(fixture('q1_sentences'))));
-  const tried = calls.slice(nBefore).map((c) => `${c.url.match(/models\/([^:]+):/)[1]} (thinking ${c.body.generationConfig.thinkingConfig.thinkingLevel})`).join(' → ');
-  check({ id: 'UI-30', feature: 'Solve from a question: automatic fallback on 503 (mocked)', input: 'gemini-3.6-flash answers 503 high demand; gemini-3.8-flash answers',
-    expected: 'gemini-3.6-flash (thinking MINIMAL) → gemini-3.8-flash (thinking LOW) | The question was read. Check the machine below before converting. Answered by gemini-3.8-flash.',
-    actual: `${tried} | ${rFallback}`, evidence: 'test log' });
+  const per = (table) => (req) => table[req.url().match(/models\/([^:]+):/)[1]] || geminiOk(fixture('q1_sentences'));
+  const label = (m) => page.textContent(`#aiModelChoice option[value="${m}"]`);
+  let n0 = calls.length;
+  const rAuto1 = await errorCase(per({ 'gemini-3.6-flash': quota }));
+  check({ id: 'UI-30', feature: 'Solve from a question: Auto, 429 → next model (mocked)', input: 'Auto; gemini-3.6-flash answers 429 (daily quota); gemini-3.8-flash answers',
+    expected: 'calls gemini-3.6-flash → gemini-3.8-flash | The question was read. Check the machine below before converting. Answered by gemini-3.8-flash. | dropdown: gemini-3.6-flash (quota used up today)',
+    actual: `calls ${modelsCalled(n0).join(' → ')} | ${rAuto1} | dropdown: ${await label('gemini-3.6-flash')}`, evidence: 'test log' });
+
+  // next request: the marked model is skipped; 503 on gemini-3.8-flash → gemini-3.5-flash-lite answers
+  n0 = calls.length;
+  const rAuto2 = await errorCase(per({ 'gemini-3.6-flash': quota, 'gemini-3.8-flash': busy }));
+  const thinking = calls.slice(n0).map((c) => c.body.generationConfig.thinkingConfig.thinkingLevel).join(', ');
+  check({ id: 'UI-32', feature: 'Solve from a question: Auto skips a used-up model; 503 → next model (mocked)', input: 'Auto again; gemini-3.8-flash answers 503 high demand; gemini-3.5-flash-lite answers',
+    expected: 'calls gemini-3.8-flash → gemini-3.5-flash-lite (thinking LOW, MINIMAL) | The question was read. Check the machine below before converting. Answered by gemini-3.5-flash-lite.',
+    actual: `calls ${modelsCalled(n0).join(' → ')} (thinking ${thinking}) | ${rAuto2}`, evidence: 'test log' });
+
+  // all three answer 429 → one clear message; the next press sends nothing
+  await clearMarks();
+  n0 = calls.length;
+  const rAll = await errorCase(quota);
+  const nAll = calls.length - n0;
+  n0 = calls.length;
+  const rAgain = await errorCase(quota);
+  const allMsg = Q.allUsedUpMessage(Q.nextQuotaReset(Date.now()));
+  check({ id: 'UI-33', feature: 'Solve from a question: Auto, every model out of quota (mocked)', input: 'Auto; all three models answer 429; then "Read the question" again',
+    expected: `3 calls | ${allMsg} | next press: 0 calls, same message | dropdown: 3 models marked`,
+    actual: `${nAll} calls | ${rAll} | next press: ${calls.length - n0} calls, ${rAgain === rAll ? 'same message' : rAgain} | ` +
+      `dropdown: ${(await page.$$eval('#aiModelChoice option', (os) => os.filter((o) => o.textContent.endsWith('(quota used up today)')).length))} models marked`, evidence: 'test log' });
+
+  // after the reset time the marks no longer count; the model choice survives a reload and "Forget key"
+  await page.evaluate(() => localStorage.setItem('mm.geminiQuota', JSON.stringify({ 'gemini-3.6-flash': Date.now() - 1000, 'gemini-3.8-flash': Date.now() - 1000, 'gemini-3.5-flash-lite': Date.now() - 1000 })));
+  await page.reload();
+  await page.waitForSelector('#player:not([hidden])');
+  const marked = await page.$$eval('#aiModelChoice option', (os) => os.filter((o) => o.textContent.includes('quota used up')).length);
+  n0 = calls.length;
+  mock = geminiOk(fixture('q1_sentences'));
+  await page.fill('#aiQuestion', 'Convert the machine of example 1.');
+  await ask();
+  const afterReset = `${marked} marked, first call ${modelsCalled(n0)[0]}`;
+  await page.selectOption('#aiModelChoice', 'gemini-3.8-flash');
+  await page.reload();
+  await page.waitForSelector('#player:not([hidden])');
+  const keptChoice = await page.inputValue('#aiModelChoice');
+  const CUSTOM = 'custom-model-test-1';
+  await page.selectOption('#aiModelChoice', 'custom');
+  await page.fill('#aiModel', CUSTOM);
+  await page.click('#aiForget');
+  await page.fill('#aiKey', FAKE_KEY);
+  await page.reload();
+  await page.waitForSelector('#player:not([hidden])');
+  const keptCustom = `${await page.inputValue('#aiModelChoice')} ${await page.isVisible('#aiModel') ? await page.inputValue('#aiModel') : '(box hidden)'}`;
+  await page.fill('#aiQuestion', 'Convert the machine of example 1.');
+  n0 = calls.length;
+  await ask();
+  const customCalls = modelsCalled(n0);
+  await preset('ex1');
+  await page.click('#linkBtn');
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#jsonBtn')]);
+  const jsonText = fs.readFileSync(await dl.path(), 'utf8');
+  await page.click('#copyAnswerBtn');
+  const copiedText = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+  const found = [['share link', page.url()], ['JSON export', jsonText], ['copied answer', copiedText]]
+    .filter(([, t]) => [FAKE_KEY, CUSTOM, 'mm.gemini'].some((x) => t.includes(x))).map(([n]) => n);
+  check({ id: 'UI-34', feature: 'Solve from a question: quota reset, model choice remembered, nothing leaks (mocked)', input: 'marks older than now + reload; choose gemini-3.8-flash + reload; Custom id + Forget key + reload; share link, JSON export, Copy answer',
+    expected: 'after the reset: 0 marked, first call gemini-3.6-flash | after reload: gemini-3.8-flash | after Forget key + reload: custom custom-model-test-1 | Custom asks 1 model: custom-model-test-1 | key and model choice not in share link, JSON export or copied answer',
+    actual: `after the reset: ${afterReset} | after reload: ${keptChoice} | after Forget key + reload: ${keptCustom} | Custom asks ${customCalls.length} model: ${customCalls.join(', ')} | ` +
+      `key and model choice ${found.length ? 'FOUND in ' + found.join(', ') : 'not in share link, JSON export or copied answer'}`, evidence: 'test log' });
+  await page.selectOption('#aiModelChoice', 'auto');
+  await clearMarks();
+  await page.evaluate(() => { document.getElementById('solver').open = true; });
+  await page.click('#aiChange'); // the key was restored by the reload: show the field again for UI-29
 
   // key storage: saved on this device (localStorage, one fixed name) only while the box is ticked; restored on
   // reload; Forget removes it; never in sessionStorage, the share link, the JSON export or the copied answer

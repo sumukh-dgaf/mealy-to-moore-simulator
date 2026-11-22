@@ -1,112 +1,114 @@
 $ node --test
-✔ TC-01 Example 1: conversion and trace on 0111 match the hand-worked solution (3.4166ms)
+✔ TC-01 Example 1: conversion and trace on 0111 match the hand-worked solution (5.8516ms)
 ℹ TC-01 observed: O(q0)={0} O(q1)={0,1} | [q0,0]/0 [q1,0]/0 [q1,1]/1 | δ′ [q0,0]:[q0,0],[q1,0] [q1,0]:[q0,0],[q1,1] [q1,1]:[q0,0],[q1,1] | start [q0,0] | 0111: Mealy 0011, Moore 00011 → 0011 ✓ | equivalent (3 pairs)
-✔ TC-02 three classic Mealy machines: conversions match hand-worked results (1.4012ms)
+✔ TC-02 three classic Mealy machines: conversions match hand-worked results (1.0664ms)
 ℹ TC-02a observed: O(q)={0,1} | [q,0]/0 [q,1]/1 | start [q,0] | 0110: Mealy 1001, Moore 01001 → 1001 ✓ | equivalent (2 pairs)
 ℹ TC-02b observed: O(E)={0} O(O)={1} | [E,0]/0 [O,1]/1 | start [E,0] | 1101: Mealy 1001, Moore 01001 → 1001 ✓ | equivalent (2 pairs)
 ℹ TC-02c observed: O(a)={0} O(b)={0,1} O(c)={0} | [a,0]/0 [b,0]/0 [b,1]/1 [c,0]/0 | start [a,0] | 10101: Mealy 00101, Moore 000101 → 00101 ✓ | equivalent (4 pairs)
-✔ TC-03 Example 2: a state entered with every output symbol gets |Δ| copies (0.3759ms)
+✔ TC-03 Example 2: a state entered with every output symbol gets |Δ| copies (0.3594ms)
 ℹ TC-03a observed: O(p)={x,y,z} → [p,x] [p,y] [p,z]
 ℹ TC-03b observed: created 7, removed [r,z],[d,z], |Q′| = 5 ≤ 12 | abba: Mealy xxxy, Moore xxxxy → xxxy ✓ | aab: Mealy xzx, Moore xxzx → xzx ✓ | equivalent (5 pairs)
-✔ TC-04 start state with no incoming transitions gets one copy [q,−] with the default output (0.5653ms)
+✔ TC-04 start state with no incoming transitions gets one copy [q,−] with the default output (0.5111ms)
 ℹ TC-04a observed: start [s,-] with λ′ = x, flagged in step A3
 ℹ TC-04b observed: abba: Mealy xxxy, Moore zxxxy → xxxy ✓ | equivalent (5 pairs)
-✔ TC-05 start state entered with several outputs: every start copy is equivalent (0.5052ms)
+✔ TC-05 start state entered with several outputs: every start copy is equivalent (0.4931ms)
 ℹ TC-05a observed: start [q0,0]: equivalent (4 pairs) | start [q0,1]: equivalent (4 pairs)
 ℹ TC-05b observed: Start output "1" is not in O(q0) = {0}
-✔ TC-06 unreachable states are removed, and keeping them changes nothing (0.296ms)
+✔ TC-06 unreachable states are removed, and keeping them changes nothing (0.2959ms)
 ℹ TC-06a observed: removed [r,z], [d,z]; 5 states kept
 ℹ TC-06b observed: 7 states; equivalent (5 pairs)
-✔ TC-07 single state, single input symbol, single output symbol (0.7597ms)
+✔ TC-07 single state, single input symbol, single output symbol (0.3257ms)
 ℹ TC-07 observed: [q,x]/x | |Q′| = 1, |Q|·|Δ| = 1 | aaa: Mealy xxx, Moore xxxx → xxx ✓ | equivalent (1 pair)
-✔ TC-08 empty input string ε: Mealy outputs ε, Moore outputs only λ′(q0′) (0.3602ms)
+✔ TC-08 empty input string ε: Mealy outputs ε, Moore outputs only λ′(q0′) (0.3266ms)
 ℹ TC-08a observed: ε: Mealy ε, Moore 0 → ε ✓
 ℹ TC-08b observed: ε: Mealy ε, Moore x → ε ✓
-✔ TC-09 multi-character input and output symbols (0.4825ms)
+✔ TC-09 multi-character input and output symbols (0.4313ms)
 ℹ TC-09 observed: [s,y0]/y0 [s,y1]/y1 [t,y0]/y0 [t,y1]/y1 | a1 b2 b2 a1: Mealy y0 y1 y0 y1, Moore y0 y0 y1 y0 y1 → y0 y1 y0 y1 ✓
-✔ TC-10 the bound |Q′| ≤ |Q|·|Δ| is reached exactly (0.4562ms)
+✔ TC-10 the bound |Q′| ≤ |Q|·|Δ| is reached exactly (0.4033ms)
 ℹ TC-10 observed: |Q′| = 4 = |Q|·|Δ| = 4 | 0110: Mealy 0101, Moore 00101 → 0101 ✓ | equivalent (4 pairs)
-✔ TC-11 a wrong hand-converted Moore machine gets the shortest counterexample (0.4671ms)
+✔ TC-11 a wrong hand-converted Moore machine gets the shortest counterexample (0.426ms)
 ℹ TC-11 observed: not equivalent, counterexample 11 | Mealy 01 vs Moore-dropped 00
-✔ TC-12 converted machines agree with their input on 500 random strings each (10.1869ms)
+✔ TC-12 converted machines agree with their input on 500 random strings each (10.082ms)
 ℹ TC-12 observed: 3500/3500 strings: Moore output minus its first symbol = Mealy output
-✔ TC-22 on 200 random machines the bound holds and Algorithm C proves equivalence (12.3509ms)
+✔ TC-22 on 200 random machines the bound holds and Algorithm C proves equivalence (11.4349ms)
 ℹ TC-22 observed: 200/200 machines: |Q′| ≤ |Q|·|Δ| and equivalent
-✔ TC-23 the step log is structured, numbered, and in rule order (0.3076ms)
+✔ TC-23 the step log is structured, numbered, and in rule order (0.2938ms)
 ℹ TC-23 observed: 14 steps numbered 1…n; rules A1,A2,A4,A5,A6,BOUND | 28 steps numbered 1…n; rules A1,A3,A2,A4,A5,A6,BOUND
-✔ TC-13 missing transition is rejected (no trap state is added) (0.6622ms)
+✔ TC-13 missing transition is rejected (no trap state is added) (0.5195ms)
 ℹ TC-13a observed: Missing transition: δ(q1, 1) is not defined (machine must be complete)
 ℹ TC-13b observed: Missing transition: δ(q0, 1) is not defined (machine must be complete)
-✔ TC-14 unknown input and output symbols are rejected (0.1466ms)
+✔ TC-14 unknown input and output symbols are rejected (0.1344ms)
 ℹ TC-14a observed: Transition #1 (q0, 2): unknown input symbol "2" (Σ = {0, 1}) | Missing transition: δ(q0, 0) is not defined (machine must be complete)
 ℹ TC-14b observed: Transition #1 (q0, 0): unknown output symbol "7" (Δ = {0, 1}) | Missing transition: δ(q0, 0) is not defined (machine must be complete)
-✔ TC-15 duplicate transition (non-determinism) is rejected (0.0893ms)
+✔ TC-15 duplicate transition (non-determinism) is rejected (0.0813ms)
 ℹ TC-15 observed: Duplicate transition: δ(q0, 0) is defined more than once (machine must be deterministic)
-✔ TC-16 undefined or unknown start state is rejected (0.0884ms)
+✔ TC-16 undefined or unknown start state is rejected (0.1412ms)
 ℹ TC-16a observed: Start state is undefined: set "start"
 ℹ TC-16b observed: Start state "q9" is not in Q = {q0, q1}
-✔ TC-17 empty Q, Σ or Δ is rejected (0.1559ms)
+✔ TC-17 empty Q, Σ or Δ is rejected (0.1779ms)
 ℹ TC-17a observed: first error: State set Q is empty: declare at least one element in "states"; refused
 ℹ TC-17b observed: first error: Input alphabet Σ is empty: declare at least one element in "inputs"; refused
 ℹ TC-17c observed: first error: Output alphabet Δ is empty: declare at least one element in "outputs"; refused
-✔ TC-18 hand-converted Moore machine with a state lacking an output is rejected (0.3384ms)
+✔ TC-18 hand-converted Moore machine with a state lacking an output is rejected (0.2803ms)
 ℹ TC-18 observed: Missing state output: λ'([q1,1]) is not defined
-✔ TC-19 malformed table text and JSON are rejected with a clear message (0.1959ms)
+✔ TC-19 malformed table text and JSON are rejected with a clear message (0.1687ms)
 ℹ TC-19a observed: Line 3: cell "q0" must be written as next/output
 ℹ TC-19b observed: No transition table found (the header row "state | ..." is missing)
 ℹ TC-19c observed: refused with one JSON syntax error (Expected double-quoted property name in JSON at position 19 (line 1 column 20))
-✔ TC-20 a Moore machine as the main input is rejected (0.3313ms)
+✔ TC-20 a Moore machine as the main input is rejected (0.3209ms)
 ℹ TC-20 observed: Input must be a Mealy machine (this simulator converts Mealy → Moore only)
-✔ TC-24 unknown symbol in a test string, and different alphabets in the checker, are rejected (0.231ms)
+✔ TC-24 unknown symbol in a test string, and different alphabets in the checker, are rejected (0.1989ms)
 ℹ TC-24a observed: Symbol "2" is not in Σ = {0, 1}
 ℹ TC-24b observed: Input alphabets differ ({0, 1} vs {a, b}); equivalence is undefined
-✔ TC-25 table text and JSON import/export round-trip without change (0.7397ms)
+✔ TC-25 table text and JSON import/export round-trip without change (0.8648ms)
 ℹ TC-25a observed: identical
 ℹ TC-25b observed: JSON identical | table text identical
-✔ TC-26 console front-end reproduces Example 1 (104.8843ms)
+✔ TC-26 console front-end reproduces Example 1 (109.7334ms)
 ℹ TC-26 observed: Moore, first symbol dropped: 0011  ✔ match | ✔ equivalent — 3 reachable pairs: (q0, [q0,0]) (q1, [q1,0]) (q1, [q1,1])
 ℹ TC-26b observed: exit 1: w = 012: Symbol "2" is not in Σ = {0, 1}
-✔ TC-21 a 50-state, 5-symbol machine converts and verifies in under 100 ms (10.4408ms)
-ℹ TC-21 observed: under 100 ms and equivalent (median 1.82 ms; |Q′| = 122; 122 pairs)
-✔ TC-27 a model reply for Example 1 normalises to exactly the Example 1 machine (0.6738ms)
+✔ TC-21 a 50-state, 5-symbol machine converts and verifies in under 100 ms (8.1518ms)
+ℹ TC-21 observed: under 100 ms and equivalent (median 1.47 ms; |Q′| = 122; 122 pairs)
+✔ TC-27 a model reply for Example 1 normalises to exactly the Example 1 machine (0.5984ms)
 ℹ TC-27 observed: no errors; identical to ex1_11detector.json
-✔ TC-28 "missing" items are errors and nothing is converted (0.2822ms)
+✔ TC-28 "missing" items are errors and nothing is converted (0.292ms)
 ℹ TC-28 observed: The question does not say where B goes on input 1. | Missing transition: δ(B, 1) is not defined (machine must be complete); not converted
-✔ TC-29 non-deterministic or incomplete replies get the existing validation errors (0.5608ms)
+✔ TC-29 non-deterministic or incomplete replies get the existing validation errors (0.3695ms)
 ℹ TC-29a observed: Duplicate transition: δ(A, 0) is defined more than once (machine must be deterministic)
 ℹ TC-29b observed: Missing transition: δ(B, 1) is not defined (machine must be complete)
 ℹ TC-29c observed: The reply is not a JSON object.; not converted
-✔ TC-30 the self-check runs the test cases of the reply and flags a mismatch (0.6058ms)
+✔ TC-30 the self-check runs the test cases of the reply and flags a mismatch (0.4923ms)
 ℹ TC-30a observed: 0111→0011 ✓, 11→01 ✓, 1011→0001 ✓, 110→010 ✓, ε→ε ✓
 ℹ TC-30b observed: 0111→0011 ✓, 111→011 ✗
-✔ TC-31 reading the API response: JSON, blocked, invalid (0.3856ms)
+✔ TC-31 reading the API response: JSON, blocked, invalid (0.3434ms)
 ℹ TC-31 observed: reply | blocked | blocked | invalid | invalid
-✔ TC-32 the explanation in words matches the conversion, in both name styles (0.9992ms)
+✔ TC-32 the explanation in words matches the conversion, in both name styles (0.7598ms)
 ℹ TC-32a observed: contains "The Mealy machine starts at q0, which corresponds to [q0,0] (output 0) in the Moore machine."
 ℹ TC-32b observed: contains q0_0, q1_0, q1_1; no [q
 ℹ TC-32c observed: s has no incoming transitions, so it becomes s– with the default output x. | States rz and dz can never be reached from the start state, so they are removed.
-✔ TC-33 Moore state names are unique in both styles for every test machine (3.8854ms)
+✔ TC-33 Moore state names are unique in both styles for every test machine (3.2853ms)
 ℹ TC-33 observed: 60/60 unique; colliding machine falls back to [A,0] names
-✔ TC-34 the API key never appears in the request body, URL, exports, share-link text or explanation (2.8846ms)
-ℹ TC-34 observed: no key anywhere; solve.js uses none of them; localStorage only under mm.geminiKey, only in solve.js; key sent only as x-goog-api-key header
-✔ TC-35 the request asks for JSON with the response schema and can carry an inline image (0.2369ms)
+✔ TC-34 the API key never appears in the request body, URL, exports, share-link text or explanation (1.9785ms)
+ℹ TC-34 observed: no key anywhere; solve.js uses none of them; localStorage only under mm.geminiKey (the key), mm.geminiModel and mm.geminiQuota, only in solve.js; key sent only as x-goog-api-key header
+✔ TC-35 the request asks for JSON with the response schema and can carry an inline image (0.1714ms)
 ℹ TC-35 observed: application/json; schema requires 10 fields; parts text + image/jpeg; model gemini-3.6-flash
-✔ TC-36 lowest thinking level per model, and the 3.6-flash ↔ 3.8-flash fallback pair (0.1274ms)
-ℹ TC-36 observed: default gemini-3.6-flash | thinking MINIMAL, LOW, MINIMAL, MINIMAL, none | fallback gemini-3.8-flash, gemini-3.6-flash, none, none, none
-ℹ tests 36
+✔ TC-36 lowest thinking level per model, and the Auto fallback list (0.0888ms)
+ℹ TC-36 observed: default gemini-3.6-flash | thinking MINIMAL, LOW, MINIMAL, MINIMAL, none | Auto gemini-3.6-flash → gemini-3.8-flash → gemini-3.5-flash-lite
+✔ TC-37 quota marks: reset at midnight Pacific time, skipped until then, the "all used up" message (24.1495ms)
+ℹ TC-37 observed: reset 2026-11-23T08:00Z (1:30 pm IST), 2026-07-02T07:00Z (12:30 pm IST), 2026-11-02T08:00Z | 3.6 marked: gemini-3.8-flash, gemini-3.5-flash-lite | after the reset: all 3 | all marked: none | per-day 429 marks, per-minute 429 does not | All free Gemini models have used today's quota. It resets at about 1:30 pm IST. Choose a model manually or try later.
+ℹ tests 37
 ℹ suites 0
-ℹ pass 36
+ℹ pass 37
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 269.6505
+ℹ duration_ms 299.2914
 (exit code 0)
 
 ======================================================================
 $ node tests/ui-check.js http://localhost:8000/ <screenshots>   (Playwright 1.63.0, Chromium 153; server: python -m http.server 8000 in SourceCode; Gemini API mocked)
 ✔ UI-01 Editor + Example 1 loads (HTTP server): Example 1 converted: 2 → 3 states, ✓ equivalent; no console errors
-✔ UI-31 Solve from a question: open by default, no key saved yet: panel open; cursor in the question box; key field shown, "Remember on this device" ticked; hint: Paste your free key from aistudio.google.com once; it stays on this computer.
+✔ UI-31 Solve from a question: open by default, no key saved yet: panel open; cursor in the question box; key field shown, "Remember on this device" ticked; model Auto (recommended); hint: Paste your free key from aistudio.google.com once; it stays on this computer.
 ✔ UI-02 Step player (Next / Prev / timeline): Step 2 of 16 → Step 1 of 16 → Create [q0,0] → Create [q1,0]
 ✔ UI-03 SVG diagram + transition tables (result): Result: the Moore machine; 3 states drawn; Mealy and Moore tables shown
 ✔ UI-04 String tester (both machines, aligned outputs): 0111 | 0011 | 00011 | 0011 | ✓
@@ -131,12 +133,15 @@ $ node tests/ui-check.js http://localhost:8000/ <screenshots>   (Playwright 1.63
 ✔ UI-25 Solve from a question: self-check warning: The machine does not match the question on these inputs; edit it before converting.
 ✔ UI-26 Solve from a question: missing information: The question does not say where B goes on input 1. shown | Convert disabled | editor cell δ(B, 1) = —
 ✔ UI-27 Solve from a question: API errors (mocked): 429 quota message | key not accepted | blocked | not valid JSON after 2 requests | could not reach the API | old preview cleared
-✔ UI-28 Solve from a question: 60 s timeout, then the other model once (mocked): gemini-3.6-flash did not answer within 60 seconds (timeout). Then gemini-3.8-flash was tried once: gemini-3.8-flash did not answer within 60 seconds (timeout). Try again later.
-✔ UI-30 Solve from a question: automatic fallback on 503 (mocked): gemini-3.6-flash (thinking MINIMAL) → gemini-3.8-flash (thinking LOW) | The question was read. Check the machine below before converting. Answered by gemini-3.8-flash.
+✔ UI-28 Solve from a question: 60 s timeout with a chosen model (mocked): gemini-3.6-flash did not answer within 60 seconds (timeout). | 1 model call: gemini-3.6-flash
+✔ UI-30 Solve from a question: Auto, 429 → next model (mocked): calls gemini-3.6-flash → gemini-3.8-flash | The question was read. Check the machine below before converting. Answered by gemini-3.8-flash. | dropdown: gemini-3.6-flash (quota used up today)
+✔ UI-32 Solve from a question: Auto skips a used-up model; 503 → next model (mocked): calls gemini-3.8-flash → gemini-3.5-flash-lite (thinking LOW, MINIMAL) | The question was read. Check the machine below before converting. Answered by gemini-3.5-flash-lite.
+✔ UI-33 Solve from a question: Auto, every model out of quota (mocked): 3 calls | All free Gemini models have used today's quota. It resets at about 1:30 pm IST. Choose a model manually or try later. | next press: 0 calls, same message | dropdown: 3 models marked
+✔ UI-34 Solve from a question: quota reset, model choice remembered, nothing leaks (mocked): after the reset: 0 marked, first call gemini-3.6-flash | after reload: gemini-3.8-flash | after Forget key + reload: custom custom-model-test-1 | Custom asks 1 model: custom-model-test-1 | key and model choice not in share link, JSON export or copied answer
 ✔ UI-29 Solve from a question: API key remembered on this device: saved under mm.geminiKey: yes (box ticked by default) → no (unticked) → yes (ticked) | after reload: chip "Gemini key saved on this device ✓", field and hint hidden, cursor in the question box, request sent with the saved key | Change key shows the field | key not in share link, JSON export or copied answer | Forget: removed, field empty, chip hidden | after reload: no key, field and hint shown | never in sessionStorage or another storage name
 ✔ UI-16 Project design tab (M1 design document): 7 cards; first section 1. Problem Definition & Automata Specification
 ✔ UI-17 Runs offline from file:// (double-click): 2 → 3; no page errors
 ✔ UI-18 No JavaScript errors during the whole UI run: no console or page errors
 
-UI checks: 32 passed, 0 failed (of 32)
+UI checks: 35 passed, 0 failed (of 35)
 (exit code 0)
